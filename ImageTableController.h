@@ -8,9 +8,15 @@
 
 #import <AppKit/AppKit.h>
 
+@interface ImageTableView : NSTableView <NSUserInterfaceValidations>
+- (IBAction)delete:(id)sender;
+@end
+
 @interface ImageTableController : NSObject <NSTableViewDataSource>
 
 @property(unsafe_unretained) IBOutlet NSTableView *imageTable;
 @property(unsafe_unretained) IBOutlet NSArrayController *imagePathArrayController;
+
+- (IBAction)removeSelectedImages:(id)sender;
 
 @end

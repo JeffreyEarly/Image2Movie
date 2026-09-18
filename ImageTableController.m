@@ -10,6 +10,34 @@
 
 static NSPasteboardType const ImageRowPasteboardType = @"org.image2movie.row-index";
 
+@implementation ImageTableView
+
+- (void)keyDown:(NSEvent *)event
+{
+    NSString *characters = event.charactersIgnoringModifiers;
+    if (!(event.modifierFlags & (NSEventModifierFlagCommand | NSEventModifierFlagControl | NSEventModifierFlagOption)) &&
+        characters.length == 1) {
+        unichar key = [characters characterAtIndex:0];
+        if (key == NSDeleteCharacter || key == NSBackspaceCharacter || key == NSDeleteFunctionKey) {
+            [self delete:self];
+            return;
+        }
+    }
+    [super keyDown:event];
+}
+
+- (IBAction)delete:(id)sender
+{
+    [(ImageTableController *)self.dataSource removeSelectedImages:sender];
+}
+
+- (BOOL)validateUserInterfaceItem:(id<NSValidatedUserInterfaceItem>)item
+{
+    return item.action != @selector(delete:) || (self.enabled && self.selectedRowIndexes.count > 0);
+}
+
+@end
+
 @implementation ImageTableController
 @synthesize imageTable;
 @synthesize imagePathArrayController;
@@ -17,6 +45,12 @@ static NSPasteboardType const ImageRowPasteboardType = @"org.image2movie.row-ind
 - (void) awakeFromNib
 {
 	[self.imageTable registerForDraggedTypes:[NSArray arrayWithObjects: NSFilenamesPboardType, ImageRowPasteboardType, nil]];
+}
+
+- (IBAction)removeSelectedImages:(id)sender
+{
+    if (!self.imageTable.enabled) return;
+    [self.imagePathArrayController removeObjectsAtArrangedObjectIndexes:self.imageTable.selectedRowIndexes];
 }
 
 /************************************************/

@@ -46,6 +46,11 @@ The resulting app is at `build/Build/Products/Debug/Image2Movie.app`. To use it,
 drag image files from Finder into the image list, choose a frame rate and size,
 and click **Save Movie** to export an MP4.
 
+To remove images from the list, select one or more rows and press Delete/Backspace
+or choose **Edit → Delete**. Command-click or Shift-click selects multiple rows;
+Command-A selects all. This only removes entries from the movie's image list:
+the source files stay on disk. Removal is disabled while exporting.
+
 Run the standalone regression checks from a terminal with Xcode selected:
 
 ```sh

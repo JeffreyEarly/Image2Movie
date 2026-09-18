@@ -147,6 +147,66 @@ static ImagesToMovie *Model(NSArray *paths)
     return model;
 }
 
+static void TableRemovalChecks(NSArray *paths)
+{
+    [NSApplication sharedApplication];
+    ImagesToMovie *model = Model(paths);
+    NSArrayController *array = [[NSArrayController alloc] init];
+    [array bind:NSContentArrayBinding toObject:model withKeyPath:@"imagePaths" options:nil];
+    [array setSortDescriptors:@[[NSSortDescriptor sortDescriptorWithKey:@"self" ascending:NO]]];
+    ImageTableController *controller = [[ImageTableController alloc] init];
+    ImageTableView *table = [[ImageTableView alloc] initWithFrame:NSMakeRect(0, 0, 320, 200)];
+    table.allowsMultipleSelection = YES;
+    controller.imageTable = table;
+    controller.imagePathArrayController = array;
+    NSTableColumn *column = [[NSTableColumn alloc] initWithIdentifier:@"image"];
+    [table addTableColumn:column];
+    [column bind:NSValueBinding toObject:array withKeyPath:@"arrangedObjects.lastPathComponent" options:nil];
+    table.dataSource = controller;
+    [table bind:NSEnabledBinding toObject:model withKeyPath:@"movieCreationInProgress"
+        options:@{NSValueTransformerNameBindingOption:NSNegateBooleanTransformerName}];
+    NSMutableIndexSet *selection = [NSMutableIndexSet indexSetWithIndex:0];
+    [selection addIndex:2];
+    NSArray *removed = [array.arrangedObjects objectsAtIndexes:selection];
+    [table selectRowIndexes:selection byExtendingSelection:NO];
+    NSEvent *backspace = [NSEvent keyEventWithType:NSEventTypeKeyDown location:NSZeroPoint modifierFlags:0
+        timestamp:0 windowNumber:0 context:nil characters:@"\177" charactersIgnoringModifiers:@"\177" isARepeat:NO keyCode:51];
+    [table keyDown:backspace];
+    Check(model.imagePaths.count == paths.count - 2 && ![model.imagePaths containsObject:removed[0]] &&
+        ![model.imagePaths containsObject:removed[1]], @"Backspace removes selected displayed rows, including sorted nonadjacent rows");
+    [table selectRowIndexes:[NSIndexSet indexSetWithIndex:0] byExtendingSelection:NO];
+    NSEvent *forwardDelete = [NSEvent keyEventWithType:NSEventTypeKeyDown location:NSZeroPoint modifierFlags:0
+        timestamp:0 windowNumber:0 context:nil characters:@"\uF728" charactersIgnoringModifiers:@"\uF728" isARepeat:NO keyCode:117];
+    [table keyDown:forwardDelete];
+    Check(model.imagePaths.count == paths.count - 3, @"Forward Delete removes a selected row");
+    NSMenuItem *deleteItem = [[NSMenuItem alloc] initWithTitle:@"Delete" action:@selector(delete:) keyEquivalent:@""];
+    [table deselectAll:nil];
+    Check(![table validateUserInterfaceItem:deleteItem], @"Delete disabled without a selection");
+    [table delete:deleteItem];
+    Check(model.imagePaths.count == paths.count - 3, @"Empty-selection deletion is a no-op");
+    [table selectAll:nil];
+    model.movieCreationInProgress = YES;
+    Check(![table validateUserInterfaceItem:deleteItem], @"Delete disabled during export");
+    [table keyDown:backspace];
+    [table delete:deleteItem];
+    Check(model.imagePaths.count == paths.count - 3, @"Keyboard and menu cannot remove rows during export");
+    model.movieCreationInProgress = NO;
+    Check([table validateUserInterfaceItem:deleteItem], @"Delete enabled for selected rows");
+    [table delete:deleteItem];
+    Check(model.imagePaths.count == 0, @"Menu deletion removes all selected entries through the model binding");
+    model.imagePaths = [@[paths[0], paths[0], paths[1]] mutableCopy];
+    [array setSortDescriptors:@[]];
+    [array rearrangeObjects];
+    [table selectRowIndexes:[NSIndexSet indexSetWithIndex:0] byExtendingSelection:NO];
+    [table delete:nil];
+    Check([model.imagePaths isEqual:@[paths[0], paths[1]]], [NSString stringWithFormat:@"Deleting one duplicate keeps the other entry (remaining: %@)", model.imagePaths]);
+    for (NSString *path in paths) Check([[NSFileManager defaultManager] fileExistsAtPath:path], @"Removing table entries preserves source files");
+    [table unbind:NSEnabledBinding];
+    [column unbind:NSValueBinding];
+    [array unbind:NSContentArrayBinding];
+    NSLog(@"PASS: keyboard/menu image removal, sorting, multiple selection, duplicates and export guard");
+}
+
 static NSError *Export(ImagesToMovie *model, NSString *path, void (^afterStart)(void), void (^progress)(ImagesToMovie *))
 {
     ProgressObserver *observer = [[ProgressObserver alloc] init];
@@ -309,6 +369,7 @@ int main(int argc, const char *argv[])
         NSMutableArray *paths = [NSMutableArray array];
         for (NSUInteger i = 0; i < 12; i++)
             [paths addObject:MakeImage(directory, [NSString stringWithFormat:@"frame-%02lu.png", i], 320, 180, i, NO)];
+        TableRemovalChecks(paths);
         NSString *large = MakeImage(directory, @"4k.png", 3840, 2160, 0, NO);
         NSString *dpi = MakeImage(directory, @"144dpi.png", 320, 180, 0, YES);
         NSString *pdf = MakePDF(directory);

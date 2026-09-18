@@ -8,7 +8,7 @@
 
 #import "ImageTableController.h"
 
-NSString *IndicesPasteboardType = @"IndicesPasteboardType";
+static NSPasteboardType const ImageRowPasteboardType = @"org.image2movie.row-index";
 
 @implementation ImageTableController
 @synthesize imageTable;
@@ -16,7 +16,7 @@ NSString *IndicesPasteboardType = @"IndicesPasteboardType";
 
 - (void) awakeFromNib
 {
-	[self.imageTable registerForDraggedTypes:[NSArray arrayWithObjects: NSFilenamesPboardType, IndicesPasteboardType, nil]];
+	[self.imageTable registerForDraggedTypes:[NSArray arrayWithObjects: NSFilenamesPboardType, ImageRowPasteboardType, nil]];
 }
 
 /************************************************/
@@ -44,13 +44,12 @@ NSString *IndicesPasteboardType = @"IndicesPasteboardType";
     [self.imagePathArrayController setSelectionIndexes: [NSIndexSet indexSetWithIndexesInRange: NSMakeRange( destinationIndex, [temp count])]];
 }
 
-- (BOOL) tableView: (NSTableView *) aTableView writeRowsWithIndexes: (NSIndexSet *) rowIndexes toPasteboard: (NSPasteboard *) pboard
+- (id<NSPasteboardWriting>)tableView:(NSTableView *)tableView pasteboardWriterForRow:(NSInteger)row
 {
-    [pboard declareTypes: [NSArray arrayWithObject: IndicesPasteboardType] owner:self];
-    NSData *rowIndexesArchive = [NSKeyedArchiver archivedDataWithRootObject:rowIndexes];
-    [pboard setData:rowIndexesArchive forType:IndicesPasteboardType];
-    
-    return YES;
+    if (row < 0 || row >= [self.imagePathArrayController.arrangedObjects count]) return nil;
+    NSPasteboardItem *item = [[NSPasteboardItem alloc] init];
+    [item setPropertyList:@(row) forType:ImageRowPasteboardType];
+    return item;
 }
 
 - (NSDragOperation) tableView: (NSTableView*) aTableView validateDrop: (id <NSDraggingInfo>)info proposedRow: (NSInteger) row proposedDropOperation: (NSTableViewDropOperation) operation
@@ -71,7 +70,16 @@ NSString *IndicesPasteboardType = @"IndicesPasteboardType";
 - (BOOL) tableView: (NSTableView *) aTableView acceptDrop: (id <NSDraggingInfo>)info row: (NSInteger) row dropOperation: (NSTableViewDropOperation) operation
 {
     if ([info draggingSource] == self.imageTable) {
-        [self moveItemsAtIndexes: [NSKeyedUnarchiver unarchiveObjectWithData: [[info draggingPasteboard] dataForType:IndicesPasteboardType]] toIndex: row];				
+        NSUInteger count = [self.imagePathArrayController.arrangedObjects count];
+        if (row < 0 || row > count) return NO;
+        NSMutableIndexSet *indexes = [NSMutableIndexSet indexSet];
+        for (NSPasteboardItem *item in info.draggingPasteboard.pasteboardItems) {
+            NSNumber *index = [item propertyListForType:ImageRowPasteboardType];
+            if (![index isKindOfClass:[NSNumber class]] || index.integerValue < 0 || index.unsignedIntegerValue >= count) return NO;
+            [indexes addIndex:index.unsignedIntegerValue];
+        }
+        if (!indexes.count) return NO;
+        [self moveItemsAtIndexes:indexes toIndex:row];
         return YES;
     }
     else {

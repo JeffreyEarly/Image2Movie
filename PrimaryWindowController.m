@@ -31,6 +31,11 @@
     self.imagesToMovieController.imagesToMovie = self.imagesToMovie;
 }
 
+- (void)dealloc
+{
+    [self.imagesToMovie removeObserver:self forKeyPath:@"movieCreationInProgress"];
+}
+
 /************************************************/
 /*		Open Images								*/
 /************************************************/
@@ -48,7 +53,7 @@
 	[openPanel beginSheetModalForWindow: self.window completionHandler: ^(NSInteger result) {
 		if (result == NSFileHandlingPanelOKButton && openPanel.URLs.count) {
 			[[NSUserDefaults standardUserDefaults] setObject:[openPanel.URL.path stringByDeletingLastPathComponent] forKey:@"defaultImagesPath"];
-			[self.imagesToMovie.imagePaths addObjectsFromArray: [openPanel.URLs valueForKeyPath: @"path"]];
+			[[self.imagesToMovie mutableArrayValueForKey:@"imagePaths"] addObjectsFromArray:[openPanel.URLs valueForKeyPath:@"path"]];
 		}
 	}];
 }
@@ -63,10 +68,21 @@
 
 @synthesize buttonTitle;
 
++ (NSSet *)keyPathsForValuesAffectingSaveOrCancelEnabled
+{
+    return [NSSet setWithObjects:@"imagesToMovie.movieCreationInProgress", @"imagesToMovieController.readyToCreateMovie", nil];
+}
+
+- (BOOL)saveOrCancelEnabled
+{
+    return self.imagesToMovie.movieCreationInProgress || self.imagesToMovieController.readyToCreateMovie;
+}
+
 - (IBAction) buttonClicked: (id) sender
 {
 	if ( !self.imagesToMovie.movieCreationInProgress)
 	{
+		if (!self.imagesToMovieController.readyToCreateMovie) return;
 		NSSavePanel *savePanel = [NSSavePanel savePanel];
 		savePanel.directoryURL = [NSURL fileURLWithPath: [[NSUserDefaults standardUserDefaults] objectForKey: @"defaultMoviePath"] ?: NSHomeDirectory()];
 		savePanel.allowedFileTypes = @[@"mp4"];
@@ -75,7 +91,11 @@
 			if (result == NSFileHandlingPanelOKButton) {
 				[[NSUserDefaults standardUserDefaults] setObject:[savePanel.URL.path stringByDeletingLastPathComponent] forKey:@"defaultMoviePath"];
                 [self.imagesToMovieController updateModelWithNewSettings];
-				[self.imagesToMovie createMovieAtPath: savePanel.URL.path];
+				[self.imagesToMovie createMovieAtPath:savePanel.URL.path completionHandler:^(NSError *error) {
+                    if (error && !([error.domain isEqualToString:NSCocoaErrorDomain] && error.code == NSUserCancelledError)) {
+                        [self.window presentError:error];
+                    }
+                }];
 			}
 		}];
 	}

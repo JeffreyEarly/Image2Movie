@@ -7,10 +7,29 @@
 //
 
 #import "ImagesToMovie.h"
+#import <errno.h>
+#import <stdio.h>
 
-@interface ImagesToMovie ()
-- (void) finishMovie;
+@interface ImagesToMovie () {
+    dispatch_queue_t _exportQueue;
+    NSObject *_activeExport;
+    BOOL _cancelRequested;
+    dispatch_block_t _cancelExport;
+}
+- (BOOL) fillPixelBuffer:(CVPixelBufferRef)pixelBuffer withImageAtPath:(NSString *)imagePath error:(NSError **)error;
 @end
+
+static NSError *MovieError(NSString *description, NSError *underlyingError)
+{
+    NSMutableDictionary *info = [NSMutableDictionary dictionaryWithObject:description forKey:NSLocalizedDescriptionKey];
+    if (underlyingError) info[NSUnderlyingErrorKey] = underlyingError;
+    return [NSError errorWithDomain:@"Image2MovieErrorDomain" code:1 userInfo:info];
+}
+
+static NSError *MovieCancelledError(void)
+{
+    return [NSError errorWithDomain:NSCocoaErrorDomain code:NSUserCancelledError userInfo:nil];
+}
 
 NSString * const ProfileNameKey = @"ProfileNameKey";
 NSString * const ProfileMaxPixelsKey = @"ProfileMaxPixelsKey";
@@ -31,6 +50,7 @@ NSString * const ProfileMaxBitRateKey = @"ProfileMaxBitRateKey";
 - (id) init {
 	if ((self = [super init]) ) {
 		self.imagePaths = [NSMutableArray array];
+        _exportQueue = dispatch_queue_create("Image2Movie.export", DISPATCH_QUEUE_SERIAL);
 		self.minValue = 0;
 		self.maxValue = 0;
 		self.value = 0;
@@ -50,7 +70,9 @@ NSString * const ProfileMaxBitRateKey = @"ProfileMaxBitRateKey";
                                 AVVideoProfileLevelH264Main32 :
                                     @{ProfileNameKey:@"Main 3.2", ProfileMaxPixelsKey:@(1310720), ProfileMaxPixelsPerSecondKey:@(55296000), ProfileMaxBitRateKey:@(20000000), ProfileReasonableBitRateKey:@(5000000)},
                                 AVVideoProfileLevelH264Main41 :
-                                    @{ProfileNameKey:@"Main 4.1", ProfileMaxPixelsKey:@(2097152), ProfileMaxPixelsPerSecondKey:@(62914560), ProfileMaxBitRateKey:@(50000000), ProfileReasonableBitRateKey:@(9000000)}};
+                                    @{ProfileNameKey:@"Main 4.1", ProfileMaxPixelsKey:@(2097152), ProfileMaxPixelsPerSecondKey:@(62914560), ProfileMaxBitRateKey:@(50000000), ProfileReasonableBitRateKey:@(9000000)},
+                                AVVideoProfileLevelH264MainAutoLevel :
+                                    @{ProfileNameKey:@"Main Auto (4K)", ProfileMaxPixelsKey:@(3840 * 2160), ProfileMaxPixelsPerSecondKey:@(3840 * 2160 * 30), ProfileMaxBitRateKey:@(50000000), ProfileReasonableBitRateKey:@(36000000)}};
     
     return profiles;
 }
@@ -63,113 +85,208 @@ NSString * const ProfileMaxBitRateKey = @"ProfileMaxBitRateKey";
 #pragma mark Quicktime Movie Output
 #pragma mark
 
-- (void) createMovieAtPath: (NSString *) destinationPath;
+- (void) createMovieAtPath:(NSString *)destinationPath completionHandler:(void (^)(NSError *error))completionHandler
 {
-	if (self.imagePaths.count && self.frameRate > 0 && !NSEqualSizes(NSZeroSize, self.frameSize))
-	{
-		self.movieCreationInProgress = YES;
-        
-        // 0. Delete the file, if it already exists (the user had to have approved this if we've gotten this far).
-        // Note that this is an important step because otherwise an error will be generated and we won't get a valid pixelBufferPool as a consequence.
-        NSFileManager *fileManager = [[NSFileManager alloc] init];
-        if ([fileManager fileExistsAtPath: destinationPath]) [fileManager removeItemAtPath: destinationPath error: NULL];
-        
-        // 1. Create a container
-        self.movieWriter = [[AVAssetWriter alloc] initWithURL:[NSURL fileURLWithPath:destinationPath] fileType:AVFileTypeMPEG4 error:NULL];
-        
-        // 2. Create a writerInput, specifying the codec details.
-        NSDictionary *codecSettings = @{ AVVideoAverageBitRateKey : @(self.averageBitRate),
-										 AVVideoMaxKeyFrameIntervalKey : @((self.frameRate)*3.0),
-                                         AVVideoProfileLevelKey : self.profile};
-        
+    destinationPath = [destinationPath copy];
+    if (![NSThread isMainThread]) {
+        dispatch_async(dispatch_get_main_queue(), ^{
+            [self createMovieAtPath:destinationPath completionHandler:completionHandler];
+        });
+        return;
+    }
+    if (self.movieCreationInProgress) {
+        dispatch_async(dispatch_get_main_queue(), ^{
+            if (completionHandler) completionHandler(MovieError(@"A movie export is already in progress.", nil));
+        });
+        return;
+    }
+
+    // Freeze all settings before handing work to the export queue.
+    NSMutableArray *paths = [NSMutableArray array];
+    NSError *validationError = nil;
+    for (id path in self.imagePaths) {
+        if (![path isKindOfClass:[NSString class]] || ![path length]) {
+            validationError = MovieError(@"Every input image must have a valid file path.", nil);
+            break;
+        }
+        [paths addObject:[path copy]];
+    }
+    NSArray *imagePaths = [paths copy];
+    NSSize size = self.frameSize;
+    NSUInteger frameRate = self.frameRate;
+    NSUInteger bitRate = self.averageBitRate;
+    NSString *profile = [self.profile copy];
+    NSDictionary *limits = profile ? self.codecProfiles[profile] : nil;
+    double pixels = size.width * size.height;
+    if (!imagePaths.count || !destinationPath.isAbsolutePath ||
+        !isfinite(size.width) || !isfinite(size.height) ||
+        size.width < 1 || size.height < 1 || size.width > 3840 || size.height > 2160 ||
+        floor(size.width) != size.width || floor(size.height) != size.height ||
+        frameRate < 1 || frameRate > 30 || !limits || bitRate < 1 ||
+        bitRate > [limits[ProfileMaxBitRateKey] unsignedIntegerValue] ||
+        pixels > [limits[ProfileMaxPixelsKey] doubleValue] ||
+        pixels * frameRate > [limits[ProfileMaxPixelsPerSecondKey] doubleValue]) {
+        validationError = MovieError(@"Choose readable images, a valid destination, and supported movie dimensions, frame rate, profile, and bit rate.", nil);
+    }
+    if (validationError) {
+        dispatch_async(dispatch_get_main_queue(), ^{
+            if (completionHandler) completionHandler(validationError);
+        });
+        return;
+    }
+
+    NSString *temporaryPath = [[destinationPath stringByDeletingLastPathComponent]
+        stringByAppendingPathComponent:[NSString stringWithFormat:@".Image2Movie-%@.mp4", NSUUID.UUID.UUIDString]];
+    NSObject *exportIdentity = [[NSObject alloc] init];
+    __block AVAssetWriter *writer = nil;
+    __block AVAssetWriterInput *writerInput = nil;
+    __block AVAssetWriterInputPixelBufferAdaptor *adaptor = nil;
+    __block NSUInteger frame = 0;
+    __block BOOL finishing = NO;
+    __block BOOL finished = NO;
+
+    BOOL (^isCancelled)(void) = ^BOOL {
+        @synchronized (self) {
+            return self->_activeExport == exportIdentity && self->_cancelRequested;
+        }
+    };
+    void (^finish)(NSError *) = ^(NSError *error) {
+        // Every caller runs on the same queue, including late writer callbacks.
+        if (finished) return;
+        finished = YES;
+        @synchronized (self) {
+            if (self->_cancelRequested) error = MovieCancelledError();
+            // This lock is also the cancellation boundary: once rename succeeds,
+            // cancellation can no longer turn a committed export into a failure.
+            if (!error && rename(temporaryPath.fileSystemRepresentation, destinationPath.fileSystemRepresentation) != 0) {
+                NSError *underlying = [NSError errorWithDomain:NSPOSIXErrorDomain code:errno userInfo:nil];
+                error = MovieError(@"The completed movie could not be moved to its destination.", underlying);
+            }
+            self->_cancelExport = nil;
+        }
+        if (error) [writer cancelWriting];
+        NSError *cleanupError = nil;
+        if (![[NSFileManager defaultManager] removeItemAtPath:temporaryPath error:&cleanupError] &&
+            cleanupError.code != NSFileNoSuchFileError) {
+            error = MovieError([NSString stringWithFormat:@"%@ Temporary movie cleanup also failed: %@",
+                error.localizedDescription ?: @"The movie was saved.", cleanupError.localizedDescription], error ?: cleanupError);
+        }
+        adaptor = nil;
+        writerInput = nil;
+        writer = nil;
+        dispatch_async(dispatch_get_main_queue(), ^{
+            @synchronized (self) {
+                if (self->_activeExport != exportIdentity) return;
+                self->_activeExport = nil;
+            }
+            self.movieWriter = nil;
+            self.movieCreationInProgress = NO;
+            if (completionHandler) completionHandler(error);
+        });
+    };
+
+    @synchronized (self) {
+        _activeExport = exportIdentity;
+        _cancelRequested = NO;
+        _cancelExport = ^{ finish(MovieCancelledError()); };
+    }
+    self.minValue = 0;
+    self.maxValue = imagePaths.count;
+    self.value = 0;
+    self.progressString = [NSString stringWithFormat:@"0 of %lu, %@", imagePaths.count, [imagePaths[0] lastPathComponent]];
+    self.movieCreationInProgress = YES;
+
+    dispatch_async(_exportQueue, ^{
+        if (finished) return;
+        if (isCancelled()) { finish(MovieCancelledError()); return; }
+        NSError *error = nil;
+        writer = [[AVAssetWriter alloc] initWithURL:[NSURL fileURLWithPath:temporaryPath] fileType:AVFileTypeMPEG4 error:&error];
+        if (!writer) { finish(MovieError(@"The movie file could not be created.", error)); return; }
+        self.movieWriter = writer;
+        NSDictionary *codecSettings = @{ AVVideoAverageBitRateKey : @(bitRate),
+                                         AVVideoMaxKeyFrameIntervalKey : @(frameRate * 3),
+                                         AVVideoExpectedSourceFrameRateKey : @(frameRate),
+                                         AVVideoProfileLevelKey : profile };
         NSDictionary *videoSettings = @{ AVVideoCodecKey : AVVideoCodecH264,
                                          AVVideoCompressionPropertiesKey : codecSettings,
-                                         AVVideoWidthKey : @(self.frameSize.width),
-                                         AVVideoHeightKey : @(self.frameSize.height)};
-        
-        AVAssetWriterInput *writerInput = [AVAssetWriterInput assetWriterInputWithMediaType:AVMediaTypeVideo outputSettings:videoSettings];
-        
-        // 3. Create an adaptor (wired to the writerInput) which provides some memory buffers we should draw the images to.
-        NSDictionary *bufferAttributes = @{ (__bridge NSString *) kCVPixelBufferPixelFormatTypeKey : @(kCVPixelFormatType_32ARGB),
-                                                                 (__bridge NSString *) kCVPixelBufferWidthKey: @(self.frameSize.width),
-                                                                 (__bridge NSString *) kCVPixelBufferHeightKey: @(self.frameSize.height) };
-        AVAssetWriterInputPixelBufferAdaptor *adaptor = [AVAssetWriterInputPixelBufferAdaptor assetWriterInputPixelBufferAdaptorWithAssetWriterInput:writerInput
-                                                                                                                         sourcePixelBufferAttributes:bufferAttributes];
-		// 4. Tell the assetWriter about its input source.
-        [self.movieWriter addInput: writerInput];
-        
-        [self.movieWriter startWriting];
-        [self.movieWriter startSessionAtSourceTime: kCMTimeZero];
-        
-        // 5. Now we just append CVPixelBuffers to the adaptor with its completion block.
-        dispatch_queue_t dispatchQueue = dispatch_queue_create("mediaInputQueue", NULL);
-        int __block frame = 0;
-        self.minValue = 0;
-		self.maxValue = self.imagePaths.count;
-		
-		dispatch_block_t updateProgress = ^{
-			self.value = frame;
-			NSString *name = self.value < self.imagePaths.count ? [[self.imagePaths objectAtIndex:self.value] lastPathComponent] : @"";
-			self.progressString = [NSString stringWithFormat: @"%lu of %lu, %@", self.value, self.maxValue, name];
-		};
-		
-		updateProgress();
-		
-        [writerInput requestMediaDataWhenReadyOnQueue:dispatchQueue usingBlock:^{
-            while ([writerInput isReadyForMoreMediaData])
-            {
-                if (frame < self.imagePaths.count)
-                {
-                    CVPixelBufferRef pixelsBuffer = NULL;
-                    CVPixelBufferPoolCreatePixelBuffer (NULL, adaptor.pixelBufferPool, &pixelsBuffer);
-                    
-                    // Lock pixel buffer address
-                    CVPixelBufferLockBaseAddress(pixelsBuffer, 0);
-                    
-                    // Create your function to set your pixels data in the buffer (in your case, fill with your finalImage data)
-                    //[self yourFunctionToPutDataInPixelBuffer:CVPixelBufferGetBaseAddress(pixelsBuffer)];
-//                    NSLog(@"path: %@, frame: %d", [self.imagePaths[frame] lastPathComponent], frame);
-                    [self fillPixelBuffer: pixelsBuffer withImageAtPath: self.imagePaths[frame] resizedTo: self.frameSize];
-                    
-                    // Unlock pixel buffer address
-                    CVPixelBufferUnlockBaseAddress(pixelsBuffer, 0);
-                    
-                    // Append pixel buffer (calculate currentFrameTime with your needing, the most simplest way is to have a frame time starting at 0 and increment each time you write a frame with the time of a frame (inverse of your framerate))
-					if (self.movieWriter.status == AVAssetWriterStatusWriting) {
-						[adaptor appendPixelBuffer:pixelsBuffer withPresentationTime:CMTimeMake(frame, self.frameRate)];
-					}
-                    
-                    // Release pixel buffer
-                    CVPixelBufferRelease(pixelsBuffer);
-                    
-                    // Advance to the next frame.
+                                         AVVideoWidthKey : @(size.width),
+                                         AVVideoHeightKey : @(size.height) };
+        if (![writer canApplyOutputSettings:videoSettings forMediaType:AVMediaTypeVideo]) {
+            finish(MovieError(@"This computer cannot encode the selected movie settings.", nil)); return;
+        }
+        writerInput = [AVAssetWriterInput assetWriterInputWithMediaType:AVMediaTypeVideo outputSettings:videoSettings];
+        NSDictionary *bufferAttributes = @{ (__bridge NSString *)kCVPixelBufferPixelFormatTypeKey : @(kCVPixelFormatType_32ARGB),
+                                            (__bridge NSString *)kCVPixelBufferWidthKey : @(size.width),
+                                            (__bridge NSString *)kCVPixelBufferHeightKey : @(size.height),
+                                            (__bridge NSString *)kCVPixelBufferCGImageCompatibilityKey : @YES,
+                                            (__bridge NSString *)kCVPixelBufferCGBitmapContextCompatibilityKey : @YES };
+        adaptor = [AVAssetWriterInputPixelBufferAdaptor assetWriterInputPixelBufferAdaptorWithAssetWriterInput:writerInput sourcePixelBufferAttributes:bufferAttributes];
+        if (![writer canAddInput:writerInput]) {
+            finish(MovieError(@"The movie writer could not accept its video input.", nil)); return;
+        }
+        [writer addInput:writerInput];
+        if (![writer startWriting]) { finish(MovieError(@"Movie encoding could not start.", writer.error)); return; }
+        [writer startSessionAtSourceTime:kCMTimeZero];
+        [writerInput requestMediaDataWhenReadyOnQueue:self->_exportQueue usingBlock:^{
+            if (finished || finishing) return;
+            if (isCancelled()) { finish(MovieCancelledError()); return; }
+            if (writer.status != AVAssetWriterStatusWriting) {
+                finish(MovieError(@"Movie encoding failed.", writer.error)); return;
+            }
+            while (frame < imagePaths.count && writerInput.readyForMoreMediaData) {
+                if (isCancelled()) { finish(MovieCancelledError()); return; }
+                @autoreleasepool {
+                    CVPixelBufferRef buffer = NULL;
+                    CVReturn result = adaptor.pixelBufferPool ? CVPixelBufferPoolCreatePixelBuffer(NULL, adaptor.pixelBufferPool, &buffer) : kCVReturnInvalidPoolAttributes;
+                    if (result != kCVReturnSuccess || !buffer) {
+                        finish(MovieError(@"A movie frame buffer could not be allocated.", nil)); return;
+                    }
+                    NSError *frameError = nil;
+                    BOOL drewFrame = [self fillPixelBuffer:buffer withImageAtPath:imagePaths[frame] error:&frameError];
+                    BOOL appended = drewFrame && !isCancelled() && [adaptor appendPixelBuffer:buffer withPresentationTime:CMTimeMake((int64_t)frame, (int32_t)frameRate)];
+                    CVPixelBufferRelease(buffer);
+                    if (!appended) {
+                        finish(frameError ?: MovieError(@"A movie frame could not be encoded.", writer.error)); return;
+                    }
                     frame++;
-					
-					// Update the current status for the user to see
-					dispatch_async(dispatch_get_main_queue(), updateProgress);
+                    NSUInteger completedFrames = frame;
+                    NSString *nextName = frame < imagePaths.count ? [imagePaths[frame] lastPathComponent] : @"";
+                    dispatch_async(dispatch_get_main_queue(), ^{
+                        @synchronized (self) {
+                            if (self->_activeExport != exportIdentity) return;
+                        }
+                        self.value = completedFrames;
+                        self.progressString = [NSString stringWithFormat:@"%lu of %lu, %@", completedFrames, imagePaths.count, nextName];
+                    });
                 }
-				else
-				{
-                    [writerInput markAsFinished];
-					[self.movieWriter finishWriting];
-					
-					if (self.movieWriter.status == AVAssetWriterStatusFailed) {
-						NSLog(@"%@",[self.movieWriter.error description]);
-					}
-					
-                    [self finishMovie];
-                }
-				
-				if (self.movieWriter.status == AVAssetWriterStatusCancelled) {
-					[self finishMovie];
-				}
+            }
+            if (isCancelled()) { finish(MovieCancelledError()); return; }
+            if (writer.status != AVAssetWriterStatusWriting) {
+                finish(MovieError(@"Movie encoding failed.", writer.error)); return;
+            }
+            if (frame == imagePaths.count) {
+                finishing = YES;
+                [writerInput markAsFinished];
+                [writer endSessionAtSourceTime:CMTimeMake((int64_t)frame, (int32_t)frameRate)];
+                AVAssetWriter *finishingWriter = writer;
+                [finishingWriter finishWritingWithCompletionHandler:^{
+                    dispatch_async(self->_exportQueue, ^{
+                        if (finished) return;
+                        finish(finishingWriter.status == AVAssetWriterStatusCompleted ? nil :
+                            MovieError(@"The movie could not be finished.", finishingWriter.error));
+                    });
+                }];
             }
         }];
-    }
+    });
 }
 
 - (NSSize) resizeOriginal: (NSSize) originalSize intoTargetSize: (NSSize) targetSize withTolerance: (BOOL) tolerateSlop;
 {
+    if (!isfinite(originalSize.width) || !isfinite(originalSize.height) ||
+        !isfinite(targetSize.width) || !isfinite(targetSize.height) ||
+        originalSize.width <= 0 || originalSize.height <= 0 || targetSize.width <= 0 || targetSize.height <= 0) return NSZeroSize;
+
     // Set an aspect ratio tolerance.
     CGFloat tolerance = tolerateSlop ? 0.5/100 : 0.0;
     
@@ -186,37 +303,72 @@ NSString * const ProfileMaxBitRateKey = @"ProfileMaxBitRateKey";
     return targetSize;
 }
 
-- (void) fillPixelBuffer: (CVPixelBufferRef) pixelBuffer withImageAtPath: (NSString *) imagePath resizedTo: (NSSize) size
+- (NSImage *) imageAtPath:(NSString *)imagePath error:(NSError **)error
 {
-    NSImage *initialImage = [[NSImage alloc] initWithContentsOfFile: imagePath];
-    
-    size_t bitsPerComponent = 8;
-    CGColorSpaceRef cs = CGColorSpaceCreateWithName(kCGColorSpaceGenericRGB);
-    size_t bytesPerRow = CVPixelBufferGetBytesPerRow(pixelBuffer);
-        
-    // context to draw in, set to pixel buffer's address
-    CGContextRef cgContext = CGBitmapContextCreate(CVPixelBufferGetBaseAddress(pixelBuffer), size.width, size.height, bitsPerComponent, bytesPerRow, cs, kCGImageAlphaNoneSkipFirst);
-    
-    NSGraphicsContext *context = [NSGraphicsContext graphicsContextWithGraphicsPort:cgContext flipped:NO];
-    [NSGraphicsContext saveGraphicsState];
-    [NSGraphicsContext setCurrentContext:context];
-    [[NSGraphicsContext currentContext] setImageInterpolation:NSImageInterpolationHigh];
-    // eps images need an extra 4 rows some bug somewhere.
-    [initialImage drawInRect: NSMakeRect(0, 0, size.width, size.height) fromRect: NSZeroRect operation: NSCompositeCopy fraction: 1.0];
-    [NSGraphicsContext restoreGraphicsState];
-    
-    CFRelease(cgContext);
-	CFRelease(cs);
+    NSImage *image = [[NSImage alloc] initWithContentsOfFile:imagePath];
+    for (NSImageRep *representation in image.representations) {
+        if (![representation isKindOfClass:[NSBitmapImageRep class]]) continue;
+        // NSImage and CGImage can appear valid while their lazy decoder fails.
+        CGImageRef decodedImage = [(NSBitmapImageRep *)representation CGImage];
+        CFDataRef pixels = decodedImage ? CGDataProviderCopyData(CGImageGetDataProvider(decodedImage)) : NULL;
+        BOOL complete = pixels && CFDataGetLength(pixels) > 0;
+        if (pixels) CFRelease(pixels);
+        if (!complete) {
+            image = nil;
+            break;
+        }
+    }
+    if (!image.isValid) {
+        if (error) *error = MovieError([NSString stringWithFormat:@"The image “%@” could not be completely decoded.", imagePath.lastPathComponent], nil);
+        return nil;
+    }
+    return image;
 }
 
-- (void) finishMovie
+- (BOOL) fillPixelBuffer:(CVPixelBufferRef)pixelBuffer withImageAtPath:(NSString *)imagePath error:(NSError **)error
 {
-	self.movieCreationInProgress = NO;
+    NSImage *image = [self imageAtPath:imagePath error:error];
+    if (!image) return NO;
+    CVReturn result = CVPixelBufferLockBaseAddress(pixelBuffer, 0);
+    if (result != kCVReturnSuccess) {
+        if (error) *error = MovieError(@"A movie frame buffer could not be locked.", nil);
+        return NO;
+    }
+    CGColorSpaceRef colorSpace = CGColorSpaceCreateWithName(kCGColorSpaceGenericRGB);
+    size_t width = CVPixelBufferGetWidth(pixelBuffer);
+    size_t height = CVPixelBufferGetHeight(pixelBuffer);
+    CGContextRef context = colorSpace ? CGBitmapContextCreate(CVPixelBufferGetBaseAddress(pixelBuffer), width, height, 8,
+        CVPixelBufferGetBytesPerRow(pixelBuffer), colorSpace, (CGBitmapInfo)kCGImageAlphaNoneSkipFirst) : NULL;
+    BOOL drewImage = NO;
+    if (context) {
+        NSRect bounds = NSMakeRect(0, 0, width, height);
+        NSGraphicsContext *graphicsContext = [NSGraphicsContext graphicsContextWithCGContext:context flipped:NO];
+        CGImageRef decodedImage = [image CGImageForProposedRect:&bounds context:graphicsContext hints:nil];
+        if (decodedImage) {
+            CGContextSetRGBFillColor(context, 0, 0, 0, 1);
+            CGContextFillRect(context, CGRectMake(0, 0, width, height));
+            CGContextSetInterpolationQuality(context, kCGInterpolationHigh);
+            CGContextDrawImage(context, CGRectMake(0, 0, width, height), decodedImage);
+            drewImage = YES;
+        }
+        CGContextRelease(context);
+    }
+    if (colorSpace) CGColorSpaceRelease(colorSpace);
+    result = CVPixelBufferUnlockBaseAddress(pixelBuffer, 0);
+    if (result != kCVReturnSuccess) drewImage = NO;
+    if (!drewImage && error) {
+        *error = MovieError([NSString stringWithFormat:@"The image “%@” could not be decoded into a movie frame.", imagePath.lastPathComponent], nil);
+    }
+    return drewImage;
 }
 
 - (void) cancel
 {
-	[self.movieWriter cancelWriting];
+    @synchronized (self) {
+        if (!_cancelExport) return;
+        _cancelRequested = YES;
+        dispatch_async(_exportQueue, _cancelExport);
+    }
 }
 
 @synthesize movieCreationInProgress;

@@ -6,9 +6,9 @@
 //  Copyright (c) 2011 __MyCompanyName__. All rights reserved.
 //
 
-#import <Foundation/Foundation.h>
+#import <AppKit/AppKit.h>
 
-@interface ImageTableController : NSObject
+@interface ImageTableController : NSObject <NSTableViewDataSource>
 
 @property(unsafe_unretained) IBOutlet NSTableView *imageTable;
 @property(unsafe_unretained) IBOutlet NSArrayController *imagePathArrayController;

@@ -9,6 +9,8 @@
 #import <Foundation/Foundation.h>
 #import <AVFoundation/AVFoundation.h>
 
+@class NSImage;
+
 NSString * const ProfileNameKey;
 NSString * const ProfileMaxPixelsKey;
 NSString * const ProfileMaxPixelsPerSecondKey;
@@ -43,12 +45,14 @@ NSString * const ProfileMaxBitRateKey;
 
 @property(readwrite, strong, atomic) AVAssetWriter *movieWriter;
 
-- (void) createMovieAtPath: (NSString *) destinationPath;
+// Completion runs once on the main thread. A nil error means success.
+- (void) createMovieAtPath: (NSString *) destinationPath completionHandler: (void (^)(NSError *error)) completionHandler;
 
 // With tolerance allows some fudge factor.
 - (NSSize) resizeOriginal: (NSSize) originalSize intoTargetSize: (NSSize) targetSize withTolerance: (BOOL) tolerateSlop;
 
-- (void) fillPixelBuffer: (CVPixelBufferRef) pixelBuffer withImageAtPath: (NSString *) imagePath resizedTo: (NSSize) size;
+// Loads a complete raster image or a supported vector image.
+- (NSImage *) imageAtPath:(NSString *)imagePath error:(NSError **)error;
 
 - (void) cancel;
 

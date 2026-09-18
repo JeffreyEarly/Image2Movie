@@ -9,7 +9,7 @@
 #import <Cocoa/Cocoa.h>
 #import "PrimaryWindowController.h"
 
-@interface AppController : NSObject
+@interface AppController : NSObject <NSApplicationDelegate>
 
 @property(readwrite, strong, nonatomic) PrimaryWindowController *windowController;
 

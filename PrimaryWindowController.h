@@ -28,6 +28,7 @@
 
 // This will either build the movie, or cancel the movie that's being built.
 @property(readwrite, copy, nonatomic) NSString *buttonTitle;
+@property(readonly, nonatomic) BOOL saveOrCancelEnabled;
 - (IBAction) buttonClicked: (id) sender;
 
 /************************************************/

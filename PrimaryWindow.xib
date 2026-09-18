@@ -89,7 +89,7 @@
                         </buttonCell>
                         <connections>
                             <action selector="buttonClicked:" target="-2" id="174"/>
-                            <binding destination="124" name="enabled" keyPath="readyToCreateMovie" id="231"/>
+                            <binding destination="-2" name="enabled" keyPath="saveOrCancelEnabled" id="231"/>
                             <binding destination="-2" name="title" keyPath="buttonTitle" id="175"/>
                         </connections>
                     </button>
@@ -139,6 +139,7 @@
                                     <menuItem title="640 x 480" tag="480" id="87"/>
                                     <menuItem title="1280 x 720" tag="720" id="95"/>
                                     <menuItem title="1920 x 1080" tag="1080" id="96"/>
+                                    <menuItem title="3840 x 2160" tag="2160" id="uhd-preset-2160"/>
                                     <menuItem isSeparatorItem="YES" id="97"/>
                                     <menuItem title="Custom" tag="1" id="98"/>
                                 </items>

@@ -85,7 +85,7 @@
 		if (!self.imagesToMovieController.readyToCreateMovie) return;
 		NSSavePanel *savePanel = [NSSavePanel savePanel];
 		savePanel.directoryURL = [NSURL fileURLWithPath: [[NSUserDefaults standardUserDefaults] objectForKey: @"defaultMoviePath"] ?: NSHomeDirectory()];
-		savePanel.allowedFileTypes = @[@"mp4"];
+		savePanel.allowedFileTypes = @[[self.imagesToMovieController.codec isEqualToString:AVVideoCodecTypeAppleProRes422] ? @"mov" : @"mp4"];
 		
 		[savePanel beginSheetModalForWindow: self.window completionHandler: ^(NSInteger result) {
 			if (result == NSFileHandlingPanelOKButton) {

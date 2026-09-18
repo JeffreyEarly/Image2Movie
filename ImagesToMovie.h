@@ -32,6 +32,7 @@ NSString * const ProfileMaxBitRateKey;
 @property NSSize frameSize;
 @property NSUInteger averageBitRate;
 @property NSString *profile;
+@property(copy) AVVideoCodecType codec; // H.264 by default
 
 @property(readonly, nonatomic) NSDictionary *codecProfiles;
 

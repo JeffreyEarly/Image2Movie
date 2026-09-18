@@ -1,11 +1,19 @@
 # Image2Movie
 
-A macOS application for turning a sequence of images into an H.264 MPEG-4 movie,
-with controls for frame rate, output size, and bit rate. Written in Objective-C
+A macOS application for turning a sequence of images into a movie,
+with controls for codec, frame rate, output size, and bit rate. Written in Objective-C
 using Cocoa and AVFoundation.
 
-Exports support up to UHD 3840 x 2160 at 1–30 fps. The 4K preset uses H.264
-Main AutoLevel at 36 Mb/s by default, with a 50 Mb/s maximum. Existing output
+Choose H.264 (the default) or HEVC / H.265 for MP4 output, or Apple ProRes 422
+for MOV output. H.264 and HEVC use the existing size-based bitrate defaults,
+including 36 Mb/s for UHD, with a 50 Mb/s maximum (lower for legacy H.264
+profiles). ProRes manages its bitrate automatically. The profile controls apply
+only to H.264; custom bitrate controls apply to H.264 and HEVC. All codecs use
+the existing opaque, 8-bit RGB rendering pipeline and macOS encoders, with no
+additional dependencies. Encoder availability is checked when exporting.
+
+Exports support up to UHD 3840 x 2160 at 1–30 fps. The H.264 4K preset uses
+Main AutoLevel. Existing output
 files are replaced only after successful encoding; cancellation or failure
 preserves the previous movie. Unreadable images stop the export with an error.
 
@@ -43,8 +51,8 @@ xcodebuild -project Image2Movie.xcodeproj -scheme Image2Movie \
 ```
 
 The resulting app is at `build/Build/Products/Debug/Image2Movie.app`. To use it,
-drag image files from Finder into the image list, choose a frame rate and size,
-and click **Save Movie** to export an MP4.
+drag image files from Finder into the image list, choose a codec, frame rate and
+size, and click **Save Movie**. The Save dialog uses the codec's MP4 or MOV extension.
 
 To remove images from the list, select one or more rows and press Delete/Backspace
 or choose **Edit → Delete**. Command-click or Shift-click selects multiple rows;
@@ -60,7 +68,8 @@ bash Tests/run-regressions.sh
 The script compiles against the app sources, generates temporary fixtures, and
 checks destination preservation, invalid settings and images, cancellation and
 retry, main-thread notifications, pixel sizing, controller readiness, and decoded
-ordinary/UHD/vector movies. It adds no test target or dependencies. Temporary
+ordinary/UHD/vector movies, plus HEVC and ProRes codec/container selection and
+controller switching. It adds no test target or dependencies. Temporary
 files are removed on exit; set `KEEP_TEST_OUTPUT=1` to retain them for inspection.
 The encoder checks require access to macOS video services and may fail in a
 restricted shell sandbox.
@@ -70,6 +79,8 @@ static analysis, the regression harness, and UI checks for UHD export, Cancel,
 and corrupt-frame error presentation. The movie exported through the UI also
 decoded to the expected ordered UHD frames. The original interface and legacy
 encoding profiles remain available alongside the new UHD preset.
+HEVC and ProRes 422 pass ordinary/UHD decoding and export safety checks, plus
+checks against the built window for codec controls and MP4/MOV Save extensions.
 
 The macOS 12.0 deployment target is the oldest supported by this Xcode version;
 older systems have not been tested. Existing deprecation warnings and legacy

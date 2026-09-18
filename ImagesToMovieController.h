@@ -33,6 +33,10 @@
 
 // Default size and compression profiles, or custom
 @property(readwrite, nonatomic) NSInteger selectedSizePresetsTag;
+@property(nonatomic) NSInteger selectedCodecTag; // 0: H.264, 1: HEVC, 2: ProRes 422
+@property(readonly, nonatomic) NSString *codec;
+@property(readonly, nonatomic) BOOL usesH264Profile;
+@property(readonly, nonatomic) BOOL usesBitRate;
 
 // if 'custom' is selected, this returns NO
 @property(readwrite, nonatomic) BOOL customFieldsAreEnabled;

@@ -56,6 +56,7 @@ NSString * const ProfileMaxBitRateKey = @"ProfileMaxBitRateKey";
 		self.value = 0;
 		self.frameRate = 30;
 		self.frameSize = NSMakeSize(1080, 720);
+        self.codec = AVVideoCodecTypeH264;
 	}
 	
 	return self;
@@ -115,18 +116,23 @@ NSString * const ProfileMaxBitRateKey = @"ProfileMaxBitRateKey";
     NSSize size = self.frameSize;
     NSUInteger frameRate = self.frameRate;
     NSUInteger bitRate = self.averageBitRate;
+    AVVideoCodecType codec = [self.codec copy];
+    BOOL h264 = [codec isEqualToString:AVVideoCodecTypeH264];
+    BOOL hevc = [codec isEqualToString:AVVideoCodecTypeHEVC];
+    BOOL proRes = [codec isEqualToString:AVVideoCodecTypeAppleProRes422];
     NSString *profile = [self.profile copy];
     NSDictionary *limits = profile ? self.codecProfiles[profile] : nil;
     double pixels = size.width * size.height;
+    BOOL validCompression = proRes || (hevc && bitRate >= 1 && bitRate <= 50000000) ||
+        (h264 && limits && bitRate >= 1 && bitRate <= [limits[ProfileMaxBitRateKey] unsignedIntegerValue] &&
+         pixels <= [limits[ProfileMaxPixelsKey] doubleValue] &&
+         pixels * frameRate <= [limits[ProfileMaxPixelsPerSecondKey] doubleValue]);
     if (!imagePaths.count || !destinationPath.isAbsolutePath ||
         !isfinite(size.width) || !isfinite(size.height) ||
         size.width < 1 || size.height < 1 || size.width > 3840 || size.height > 2160 ||
         floor(size.width) != size.width || floor(size.height) != size.height ||
-        frameRate < 1 || frameRate > 30 || !limits || bitRate < 1 ||
-        bitRate > [limits[ProfileMaxBitRateKey] unsignedIntegerValue] ||
-        pixels > [limits[ProfileMaxPixelsKey] doubleValue] ||
-        pixels * frameRate > [limits[ProfileMaxPixelsPerSecondKey] doubleValue]) {
-        validationError = MovieError(@"Choose readable images, a valid destination, and supported movie dimensions, frame rate, profile, and bit rate.", nil);
+        frameRate < 1 || frameRate > 30 || !validCompression) {
+        validationError = MovieError(@"Choose readable images, a valid destination, and supported movie dimensions, frame rate, codec, profile, and bit rate.", nil);
     }
     if (validationError) {
         dispatch_async(dispatch_get_main_queue(), ^{
@@ -135,8 +141,9 @@ NSString * const ProfileMaxBitRateKey = @"ProfileMaxBitRateKey";
         return;
     }
 
+    AVFileType fileType = proRes ? AVFileTypeQuickTimeMovie : AVFileTypeMPEG4;
     NSString *temporaryPath = [[destinationPath stringByDeletingLastPathComponent]
-        stringByAppendingPathComponent:[NSString stringWithFormat:@".Image2Movie-%@.mp4", NSUUID.UUID.UUIDString]];
+        stringByAppendingPathComponent:[NSString stringWithFormat:@".Image2Movie-%@.%@", NSUUID.UUID.UUIDString, proRes ? @"mov" : @"mp4"]];
     NSObject *exportIdentity = [[NSObject alloc] init];
     __block AVAssetWriter *writer = nil;
     __block AVAssetWriterInput *writerInput = nil;
@@ -200,17 +207,20 @@ NSString * const ProfileMaxBitRateKey = @"ProfileMaxBitRateKey";
         if (finished) return;
         if (isCancelled()) { finish(MovieCancelledError()); return; }
         NSError *error = nil;
-        writer = [[AVAssetWriter alloc] initWithURL:[NSURL fileURLWithPath:temporaryPath] fileType:AVFileTypeMPEG4 error:&error];
+        writer = [[AVAssetWriter alloc] initWithURL:[NSURL fileURLWithPath:temporaryPath] fileType:fileType error:&error];
         if (!writer) { finish(MovieError(@"The movie file could not be created.", error)); return; }
         self.movieWriter = writer;
-        NSDictionary *codecSettings = @{ AVVideoAverageBitRateKey : @(bitRate),
-                                         AVVideoMaxKeyFrameIntervalKey : @(frameRate * 3),
-                                         AVVideoExpectedSourceFrameRateKey : @(frameRate),
-                                         AVVideoProfileLevelKey : profile };
-        NSDictionary *videoSettings = @{ AVVideoCodecKey : AVVideoCodecH264,
-                                         AVVideoCompressionPropertiesKey : codecSettings,
-                                         AVVideoWidthKey : @(size.width),
-                                         AVVideoHeightKey : @(size.height) };
+        NSMutableDictionary *videoSettings = [@{ AVVideoCodecKey : codec,
+                                                AVVideoWidthKey : @(size.width),
+                                                AVVideoHeightKey : @(size.height) } mutableCopy];
+        // ProRes controls its own data rate and has no H.264-style profile or GOP.
+        if (!proRes) {
+            NSMutableDictionary *compression = [@{ AVVideoAverageBitRateKey : @(bitRate),
+                AVVideoMaxKeyFrameIntervalKey : @(frameRate * 3),
+                AVVideoExpectedSourceFrameRateKey : @(frameRate) } mutableCopy];
+            if (h264) compression[AVVideoProfileLevelKey] = profile;
+            videoSettings[AVVideoCompressionPropertiesKey] = compression;
+        }
         if (![writer canApplyOutputSettings:videoSettings forMediaType:AVMediaTypeVideo]) {
             finish(MovieError(@"This computer cannot encode the selected movie settings.", nil)); return;
         }

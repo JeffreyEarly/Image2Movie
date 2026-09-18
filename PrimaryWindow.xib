@@ -25,14 +25,14 @@
                 <autoresizingMask key="autoresizingMask"/>
                 <subviews>
                     <scrollView autohidesScrollers="YES" horizontalLineScroll="19" horizontalPageScroll="10" verticalLineScroll="19" verticalPageScroll="10" usesPredominantAxisScrolling="NO" id="4">
-                        <rect key="frame" x="20" y="278" width="487" height="446"/>
+                        <rect key="frame" x="20" y="310" width="487" height="414"/>
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                         <clipView key="contentView" id="a6R-hH-wIV">
-                            <rect key="frame" x="1" y="17" width="485" height="428"/>
+                            <rect key="frame" x="1" y="17" width="485" height="396"/>
                             <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                             <subviews>
                                 <tableView verticalHuggingPriority="750" allowsExpansionToolTips="YES" columnAutoresizingStyle="firstColumnOnly" multipleSelection="YES" autosaveColumns="NO" headerView="7" id="5" customClass="ImageTableView">
-                                    <rect key="frame" x="0.0" y="0.0" width="485" height="428"/>
+                                    <rect key="frame" x="0.0" y="0.0" width="485" height="396"/>
                                     <autoresizingMask key="autoresizingMask"/>
                                     <size key="intercellSpacing" width="3" height="2"/>
                                     <color key="backgroundColor" white="1" alpha="1" colorSpace="calibratedWhite"/>
@@ -124,6 +124,38 @@
                             <binding destination="124" name="value" keyPath="imagesToMovie.progressString" id="165"/>
                         </connections>
                     </textField>
+                    <textField verticalHuggingPriority="750" id="codec-label">
+                        <rect key="frame" x="32" y="272" width="76" height="17"/>
+                        <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
+                        <textFieldCell key="cell" scrollable="YES" alignment="right" title="Codec:" id="codec-label-cell">
+                            <font key="font" metaFont="system"/>
+                            <color key="textColor" name="controlTextColor" catalog="System" colorSpace="catalog"/>
+                            <color key="backgroundColor" name="controlColor" catalog="System" colorSpace="catalog"/>
+                        </textFieldCell>
+                    </textField>
+                    <popUpButton verticalHuggingPriority="750" id="codec-popup">
+                        <rect key="frame" x="110" y="267" width="240" height="26"/>
+                        <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
+                        <popUpButtonCell key="cell" type="push" title="H.264 (MP4)" bezelStyle="rounded" alignment="left" lineBreakMode="truncatingTail" state="on" borderStyle="borderAndBezel" imageScaling="proportionallyDown" inset="2" selectedItem="codec-h264" id="codec-cell">
+                            <behavior key="behavior" lightByBackground="YES" lightByGray="YES"/>
+                            <font key="font" metaFont="system"/>
+                            <menu key="menu" title="Codec" id="codec-menu">
+                                <items>
+                                    <menuItem title="H.264 (MP4)" state="on" id="codec-h264"/>
+                                    <menuItem title="HEVC / H.265 (MP4)" tag="1" id="codec-hevc"/>
+                                    <menuItem title="Apple ProRes 422 (MOV)" tag="2" id="codec-prores"/>
+                                </items>
+                            </menu>
+                        </popUpButtonCell>
+                        <connections>
+                            <binding destination="124" name="selectedTag" keyPath="selectedCodecTag" id="codec-selection"/>
+                            <binding destination="124" name="enabled" keyPath="imagesToMovie.movieCreationInProgress" id="codec-enabled">
+                                <dictionary key="options">
+                                    <string key="NSValueTransformerName">NSNegateBoolean</string>
+                                </dictionary>
+                            </binding>
+                        </connections>
+                    </popUpButton>
                     <popUpButton verticalHuggingPriority="750" id="65">
                         <rect key="frame" x="110" y="205" width="141" height="26"/>
                         <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
@@ -301,6 +333,13 @@
                                         <color key="textColor" name="controlTextColor" catalog="System" colorSpace="catalog"/>
                                         <color key="backgroundColor" name="controlColor" catalog="System" colorSpace="catalog"/>
                                     </textFieldCell>
+                                    <connections>
+                                        <binding destination="124" name="hidden" keyPath="usesBitRate" id="codec-hidden-206">
+                                            <dictionary key="options">
+                                                <string key="NSValueTransformerName">NSNegateBoolean</string>
+                                            </dictionary>
+                                        </binding>
+                                    </connections>
                                 </textField>
                                 <textField verticalHuggingPriority="750" id="208">
                                     <rect key="frame" x="228" y="46" width="39" height="22"/>
@@ -319,6 +358,11 @@
                                         <color key="backgroundColor" name="textBackgroundColor" catalog="System" colorSpace="catalog"/>
                                     </textFieldCell>
                                     <connections>
+                                        <binding destination="124" name="hidden" keyPath="usesBitRate" id="codec-hidden-208">
+                                            <dictionary key="options">
+                                                <string key="NSValueTransformerName">NSNegateBoolean</string>
+                                            </dictionary>
+                                        </binding>
                                         <binding destination="124" name="enabled2" keyPath="customFieldsAreEnabled" previousBinding="214" id="226">
                                             <dictionary key="options">
                                                 <integer key="NSNotApplicablePlaceholder" value="-1"/>
@@ -347,6 +391,25 @@
                                         <color key="textColor" name="controlTextColor" catalog="System" colorSpace="catalog"/>
                                         <color key="backgroundColor" name="controlColor" catalog="System" colorSpace="catalog"/>
                                     </textFieldCell>
+                                    <connections>
+                                        <binding destination="124" name="hidden" keyPath="usesH264Profile" id="codec-hidden-204">
+                                            <dictionary key="options">
+                                                <string key="NSValueTransformerName">NSNegateBoolean</string>
+                                            </dictionary>
+                                        </binding>
+                                    </connections>
+                                </textField>
+                                <textField verticalHuggingPriority="750" id="automatic-bitrate">
+                                    <rect key="frame" x="174" y="48" width="210" height="17"/>
+                                    <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
+                                    <textFieldCell key="cell" scrollable="YES" title="Automatic bitrate" id="automatic-bitrate-cell">
+                                        <font key="font" metaFont="system"/>
+                                        <color key="textColor" name="controlTextColor" catalog="System" colorSpace="catalog"/>
+                                        <color key="backgroundColor" name="controlColor" catalog="System" colorSpace="catalog"/>
+                                    </textFieldCell>
+                                    <connections>
+                                        <binding destination="124" name="hidden" keyPath="usesBitRate" id="automatic-bitrate-hidden"/>
+                                    </connections>
                                 </textField>
                                 <textField verticalHuggingPriority="750" id="207">
                                     <rect key="frame" x="174" y="49" width="49" height="17"/>
@@ -356,6 +419,13 @@
                                         <color key="textColor" name="controlTextColor" catalog="System" colorSpace="catalog"/>
                                         <color key="backgroundColor" name="controlColor" catalog="System" colorSpace="catalog"/>
                                     </textFieldCell>
+                                    <connections>
+                                        <binding destination="124" name="hidden" keyPath="usesBitRate" id="codec-hidden-207">
+                                            <dictionary key="options">
+                                                <string key="NSValueTransformerName">NSNegateBoolean</string>
+                                            </dictionary>
+                                        </binding>
+                                    </connections>
                                 </textField>
                                 <popUpButton verticalHuggingPriority="750" id="189">
                                     <rect key="frame" x="225" y="12" width="159" height="26"/>
@@ -366,6 +436,11 @@
                                         <menu key="menu" title="OtherViews" id="191"/>
                                     </popUpButtonCell>
                                     <connections>
+                                        <binding destination="124" name="hidden" keyPath="usesH264Profile" id="codec-hidden-189">
+                                            <dictionary key="options">
+                                                <string key="NSValueTransformerName">NSNegateBoolean</string>
+                                            </dictionary>
+                                        </binding>
                                         <binding destination="195" name="content" keyPath="arrangedObjects.value.description" id="197"/>
                                         <binding destination="124" name="enabled2" keyPath="customFieldsAreEnabled" previousBinding="229" id="230">
                                             <dictionary key="options">

@@ -160,11 +160,36 @@ static NSSize ImagePixelSize(NSImage *image)
     self.readyToCreateMovie = self.imagesToMovie.imagePaths.count > 0 &&
         [self.firstFramePath isEqualToString:self.imagesToMovie.imagePaths.firstObject] &&
         ValidImageSize(targetSize) && targetSize.width <= 3840 && targetSize.height <= 2160 &&
-        self.frameRate >= 1 && self.frameRate <= 30 && self.profile != nil && self.validProfiles[self.profile] != nil &&
-        isfinite(self.bitRate) && self.bitRate >= 0.000001 && self.bitRate <= self.maxBitRate;
+        self.frameRate >= 1 && self.frameRate <= 30 && self.codec != nil &&
+        (!self.usesH264Profile || (self.profile != nil && self.validProfiles[self.profile] != nil)) &&
+        (!self.usesBitRate || (isfinite(self.bitRate) && self.bitRate >= 0.000001 && self.bitRate <= self.maxBitRate));
 }
 
-// Reconsider the profile only when dimensions or frame rate change.
++ (NSSet *)keyPathsForValuesAffectingCodec { return [NSSet setWithObject:@"selectedCodecTag"]; }
++ (NSSet *)keyPathsForValuesAffectingUsesH264Profile { return [NSSet setWithObject:@"selectedCodecTag"]; }
++ (NSSet *)keyPathsForValuesAffectingUsesBitRate { return [NSSet setWithObject:@"selectedCodecTag"]; }
+
+- (NSString *)codec
+{
+    switch (self.selectedCodecTag) {
+        case 0: return AVVideoCodecTypeH264;
+        case 1: return AVVideoCodecTypeHEVC;
+        case 2: return AVVideoCodecTypeAppleProRes422;
+        default: return nil;
+    }
+}
+
+- (BOOL)usesH264Profile { return self.selectedCodecTag == 0; }
+- (BOOL)usesBitRate { return self.selectedCodecTag == 0 || self.selectedCodecTag == 1; }
+
+- (void)setSelectedCodecTag:(NSInteger)tag
+{
+    if (_selectedCodecTag == tag) return;
+    _selectedCodecTag = tag;
+    [self frameRateOrSizeDidChange];
+}
+
+// Reconsider compression defaults when dimensions, frame rate, or codec change.
 - (void)frameRateOrSizeDidChange
 {
     NSSize targetSize = [self targetSize];
@@ -198,14 +223,21 @@ static NSSize ImagePixelSize(NSImage *image)
     }
 
     self.updatingProfiles = YES;
-    self.validProfiles = profiles;
+    self.validProfiles = self.usesH264Profile ? profiles : @{};
     [self.profileDictionaryController rearrangeObjects];
     NSArray *selection = @[];
     for (NSDictionaryControllerKeyValuePair *pair in self.profileDictionaryController.arrangedObjects) {
         if ([pair.key isEqualToString:preferredProfile]) { selection = @[pair]; break; }
     }
     self.profileDictionaryController.selectedObjects = selection;
-    self.profile = preferredProfile;
+    self.profile = self.usesH264Profile ? preferredProfile : nil;
+    if (!self.usesH264Profile) {
+        self.maxBitRate = self.usesBitRate ? 50 : 0;
+        self.bitRateNumberFormatter.maximum = @(self.maxBitRate);
+        // HEVC uses the existing size-based bitrate defaults; ProRes is automatic.
+        self.bitRate = self.usesBitRate && preferredProfile ?
+            [self.imagesToMovie.codecProfiles[preferredProfile][ProfileReasonableBitRateKey] doubleValue] / 1.0e6 : 0;
+    }
     self.updatingProfiles = NO;
     [self updateReadiness];
 }
@@ -228,9 +260,10 @@ static NSSize ImagePixelSize(NSImage *image)
 
 - (void)updateModelWithNewSettings
 {
+    self.imagesToMovie.codec = self.codec;
     self.imagesToMovie.frameSize = [self targetSize];
     self.imagesToMovie.frameRate = self.frameRate;
-    self.imagesToMovie.averageBitRate = isfinite(self.bitRate) && self.bitRate > 0 && self.bitRate <= 50 ?
+    self.imagesToMovie.averageBitRate = self.usesBitRate && isfinite(self.bitRate) && self.bitRate > 0 && self.bitRate <= 50 ?
         (NSUInteger)(self.bitRate * 1.0e6) : 0;
     self.imagesToMovie.profile = self.profile;
 }

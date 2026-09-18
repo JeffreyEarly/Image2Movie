@@ -315,6 +315,31 @@ static void ControllerChecks(NSArray *paths, NSString *large, NSString *dpi, NSS
     controller.bitRate = NAN;
     Check(!controller.readyToCreateMovie, @"Invalid bitrate disables Save");
 
+    controller.selectedCodecTag = 1;
+    Check(controller.readyToCreateMovie && !controller.usesH264Profile && controller.usesBitRate &&
+        controller.validProfiles.count == 0 && controller.maxBitRate == 50, @"HEVC has bitrate controls without H.264 profiles");
+    controller.bitRate = 18;
+    [controller updateModelWithNewSettings];
+    Check([model.codec isEqualToString:AVVideoCodecTypeHEVC] && model.averageBitRate == 18000000 && model.profile == nil,
+        @"HEVC settings reach exporter");
+    controller.bitRate = 51;
+    Check(!controller.readyToCreateMovie, @"HEVC bitrate cap disables Save");
+    controller.selectedCodecTag = 2;
+    controller.bitRate = NAN;
+    Check(controller.readyToCreateMovie && !controller.usesH264Profile && !controller.usesBitRate,
+        @"ProRes readiness ignores unused bitrate and profile");
+    [controller updateModelWithNewSettings];
+    Check([model.codec isEqualToString:AVVideoCodecTypeAppleProRes422] && model.averageBitRate == 0 && model.profile == nil,
+        @"ProRes settings reach exporter");
+    controller.frameRate = 31;
+    Check(!controller.readyToCreateMovie, @"ProRes retains frame rate limit");
+    controller.frameRate = 30;
+    controller.selectedCodecTag = -1;
+    Check(!controller.readyToCreateMovie, @"Unknown codec disables Save");
+    controller.selectedCodecTag = 0;
+    Check(controller.readyToCreateMovie && controller.usesH264Profile && controller.usesBitRate &&
+        [controller.profile isEqualToString:AVVideoProfileLevelH264MainAutoLevel], @"Switching back restores H.264 settings");
+
     controller.selectedSizePresetsTag = 0;
     model.imagePaths = [@[pdf] mutableCopy];
     WaitFor(^BOOL { return controller.readyToCreateMovie; });
@@ -332,12 +357,13 @@ static void ControllerChecks(NSArray *paths, NSString *large, NSString *dpi, NSS
     NSLog(@"PASS: pixel sizing, vectors, stale loads, profiles, readiness, Cancel binding");
 }
 
-static void CancelDuringFinish(NSArray *paths, NSString *output)
+static void CancelDuringFinish(NSArray *paths, NSString *output, AVVideoCodecType codec)
 {
     Method original = class_getInstanceMethod(AVAssetWriter.class, @selector(finishWritingWithCompletionHandler:));
     Method replacement = class_getInstanceMethod(AVAssetWriter.class, @selector(regressionFinish:));
     method_exchangeImplementations(original, replacement);
     ImagesToMovie *model = Model(paths);
+    model.codec = codec;
     NSData *oldMovie = [NSData dataWithContentsOfFile:output];
     __block NSUInteger completions = 0;
     finishHook = ^{ [model cancel]; };
@@ -381,6 +407,10 @@ int main(int argc, const char *argv[])
         NSString *output = [directory stringByAppendingPathComponent:@"movie.mp4"];
 
         NSArray *invalidSettings = @[
+            ^(ImagesToMovie *m) { m.codec = nil; },
+            ^(ImagesToMovie *m) { m.codec = @"unknown"; },
+            ^(ImagesToMovie *m) { m.codec = AVVideoCodecTypeHEVC; m.averageBitRate = 0; },
+            ^(ImagesToMovie *m) { m.codec = AVVideoCodecTypeHEVC; m.averageBitRate = 50000001; },
             ^(ImagesToMovie *m) { m.profile = nil; },
             ^(ImagesToMovie *m) { m.profile = @"unknown"; },
             ^(ImagesToMovie *m) { m.frameSize = NSMakeSize(320, 0); },
@@ -433,7 +463,7 @@ int main(int argc, const char *argv[])
         Check([[NSData dataWithContentsOfFile:output] isEqual:beforeCancel], @"Mid-export cancel preserves destination");
         cancelModel.imagePaths = [paths mutableCopy];
         Check(Export(cancelModel, output, nil, nil) == nil, @"Retry after cancellation");
-        CancelDuringFinish(paths, output);
+        CancelDuringFinish(paths, output, AVVideoCodecTypeH264);
 
         NSMutableArray *uhdPaths = [NSMutableArray arrayWithObject:large];
         for (NSUInteger i = 1; i < 3; i++) [uhdPaths addObject:MakeImage(directory, [NSString stringWithFormat:@"4k-%lu.png", i], 3840, 2160, i, NO)];
@@ -443,6 +473,39 @@ int main(int argc, const char *argv[])
         NSError *uhdError = Export(uhd, uhdOutput, nil, nil);
         Check(uhdError == nil, [NSString stringWithFormat:@"4K export: %@", uhdError]);
         ValidateMovie(uhdOutput, uhd.frameSize, 3, YES);
+
+        for (AVVideoCodecType codec in @[AVVideoCodecTypeHEVC, AVVideoCodecTypeAppleProRes422]) {
+            BOOL proRes = [codec isEqualToString:AVVideoCodecTypeAppleProRes422];
+            NSString *codecOutput = [directory stringByAppendingPathComponent:proRes ? @"prores.mov" : @"hevc.mp4"];
+            ImagesToMovie *movie = Model(paths);
+            movie.codec = codec;
+            movie.profile = nil;
+            if (proRes) movie.averageBitRate = 0;
+            PreservedFailure(movie, codecOutput, YES);
+            movie.imagePaths = [@[paths[0], truncated] mutableCopy];
+            PreservedFailure(movie, codecOutput, NO);
+            movie.imagePaths = [paths mutableCopy];
+            NSError *error = Export(movie, codecOutput, ^{ movie.codec = @"unknown"; }, nil);
+            Check(error == nil, [NSString stringWithFormat:@"%@ export with frozen codec: %@", codec, error]);
+            ValidateMovie(codecOutput, movie.frameSize, paths.count, YES);
+            AVAssetTrack *track = [[AVURLAsset URLAssetWithURL:[NSURL fileURLWithPath:codecOutput] options:nil]
+                tracksWithMediaType:AVMediaTypeVideo].firstObject;
+            CMFormatDescriptionRef format = (__bridge CMFormatDescriptionRef)track.formatDescriptions.firstObject;
+            Check(format && CMFormatDescriptionGetMediaSubType(format) == (proRes ? kCMVideoCodecType_AppleProRes422 : kCMVideoCodecType_HEVC),
+                @"Movie contains the requested codec");
+            NSData *bytes = [NSData dataWithContentsOfFile:codecOutput];
+            Check(bytes.length >= 12 && memcmp((const char *)bytes.bytes + 4, "ftyp", 4) == 0 &&
+                memcmp((const char *)bytes.bytes + 8, proRes ? "qt  " : "mp42", 4) == 0, @"Correct MOV/MP4 container");
+            CancelDuringFinish(paths, codecOutput, codec);
+            movie.codec = codec;
+            movie.imagePaths = [uhdPaths mutableCopy];
+            movie.frameSize = uhd.frameSize;
+            if (!proRes) movie.averageBitRate = 36000000;
+            error = Export(movie, codecOutput, nil, nil);
+            Check(error == nil, [NSString stringWithFormat:@"%@ UHD export: %@", codec, error]);
+            ValidateMovie(codecOutput, movie.frameSize, uhdPaths.count, YES);
+            NSLog(@"PASS: %@ ordinary/UHD decoding, container, snapshot, cancellation, corrupt frame and retry", codec);
+        }
         NSString *vectorOutput = [directory stringByAppendingPathComponent:@"vector.mp4"];
         Check(Export(Model(@[pdf]), vectorOutput, nil, nil) == nil, @"Vector export");
         ValidateMovie(vectorOutput, NSMakeSize(320, 180), 1, NO);

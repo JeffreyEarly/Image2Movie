@@ -7,7 +7,6 @@
 //
 
 #import "AppController.h"
-#import "AddMovieFrameOperation.h"
 
 @implementation AppController
 

@@ -14,7 +14,6 @@
 		814F4A5514632B0200CA0F3B /* ImagesToMovieController.m in Sources */ = {isa = PBXBuildFile; fileRef = 814F4A5414632B0200CA0F3B /* ImagesToMovieController.m */; };
 		814F4A5B14633C8C00CA0F3B /* ImageTableController.m in Sources */ = {isa = PBXBuildFile; fileRef = 814F4A5A14633C8C00CA0F3B /* ImageTableController.m */; };
 		8151904B1187766300808105 /* AppController.m in Sources */ = {isa = PBXBuildFile; fileRef = 8151904A1187766300808105 /* AppController.m */; };
-		815190681187834700808105 /* QTKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 815190671187834700808105 /* QTKit.framework */; };
 		81C95AF31710D09E004D1D34 /* Implementation Notes in Resources */ = {isa = PBXBuildFile; fileRef = 81C95AF21710D09E004D1D34 /* Implementation Notes */; };
 		81C95AF51710E141004D1D34 /* AVFoundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 81C95AF41710E141004D1D34 /* AVFoundation.framework */; };
 		81C95AF71710E14F004D1D34 /* CoreVideo.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 81C95AF61710E14F004D1D34 /* CoreVideo.framework */; };
@@ -48,7 +47,6 @@
 		8151904A1187766300808105 /* AppController.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = AppController.m; sourceTree = "<group>"; };
 		8151905311877C3E00808105 /* AddMovieFrameOperation.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = AddMovieFrameOperation.h; sourceTree = "<group>"; };
 		8151905411877C3E00808105 /* AddMovieFrameOperation.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = AddMovieFrameOperation.m; sourceTree = "<group>"; };
-		815190671187834700808105 /* QTKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = QTKit.framework; path = /System/Library/Frameworks/QTKit.framework; sourceTree = "<absolute>"; };
 		8197A64915D03E99007980B2 /* ResizeImageOperation.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ResizeImageOperation.h; sourceTree = "<group>"; };
 		8197A64A15D03E99007980B2 /* ResizeImageOperation.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = ResizeImageOperation.m; sourceTree = "<group>"; };
 		81C95AF21710D09E004D1D34 /* Implementation Notes */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = "Implementation Notes"; sourceTree = "<group>"; };
@@ -68,7 +66,6 @@
 				81C95AF71710E14F004D1D34 /* CoreVideo.framework in Frameworks */,
 				81C95AF51710E141004D1D34 /* AVFoundation.framework in Frameworks */,
 				8D11072F0486CEB800E47090 /* Cocoa.framework in Frameworks */,
-				815190681187834700808105 /* QTKit.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -91,7 +88,6 @@
 		1058C7A0FEA54F0111CA2CBB /* Linked Frameworks */ = {
 			isa = PBXGroup;
 			children = (
-				815190671187834700808105 /* QTKit.framework */,
 				1058C7A1FEA54F0111CA2CBB /* Cocoa.framework */,
 			);
 			name = "Linked Frameworks";
@@ -232,6 +228,7 @@
 			developmentRegion = English;
 			hasScannedForEncodings = 1;
 			knownRegions = (
+				English,
 				en,
 			);
 			mainGroup = 29B97314FDCFA39411CA2CEA /* Image2Movie */;
@@ -307,7 +304,7 @@
 				GCC_PREFIX_HEADER = Image2Movie_Prefix.pch;
 				INFOPLIST_FILE = Info.plist;
 				INSTALL_PATH = "$(HOME)/Applications";
-				MACOSX_DEPLOYMENT_TARGET = 10.8;
+				MACOSX_DEPLOYMENT_TARGET = 12.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.EarlyInnovations.Image2Movie;
 				PRODUCT_NAME = Image2Movie;
 				SDKROOT = "";
@@ -329,7 +326,7 @@
 				GCC_VERSION = "";
 				INFOPLIST_FILE = Info.plist;
 				INSTALL_PATH = "$(HOME)/Applications";
-				MACOSX_DEPLOYMENT_TARGET = 10.8;
+				MACOSX_DEPLOYMENT_TARGET = 12.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.EarlyInnovations.Image2Movie;
 				PRODUCT_NAME = Image2Movie;
 				SDKROOT = "";

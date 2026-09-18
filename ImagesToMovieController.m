@@ -95,7 +95,8 @@ static NSString * SelectedProfileObservationContext = @"SelectedProfileObservati
     else if ( context == &SelectedProfileObservationContext)
     {
         if (self.profileDictionaryController.selectedObjects.count) {
-            self.profile = [self.profileDictionaryController.selectedObjects[0] key];
+            NSDictionaryControllerKeyValuePair *selectedProfile = self.profileDictionaryController.selectedObjects[0];
+            self.profile = selectedProfile.key;
         } else {
             self.profile = nil;
         }
@@ -185,8 +186,8 @@ static NSString * SelectedProfileObservationContext = @"SelectedProfileObservati
 
     [self frameRateOrSizeDidChange];
     if (self.validProfiles.count) {
-        NSUInteger index = preferredProfile ? [self.profileDictionaryController.arrangedObjects indexOfObjectPassingTest:^BOOL (id obj, NSUInteger idx, BOOL *stop) {
-            return [[obj key] isEqualToString: preferredProfile];
+        NSUInteger index = preferredProfile ? [self.profileDictionaryController.arrangedObjects indexOfObjectPassingTest:^BOOL (NSDictionaryControllerKeyValuePair *obj, NSUInteger idx, BOOL *stop) {
+            return [obj.key isEqualToString: preferredProfile];
         }] : 0;
         index = (index == NSNotFound) ? 0 : index;
         self.profileDictionaryController.selectedObjects = @[self.profileDictionaryController.arrangedObjects[index]];

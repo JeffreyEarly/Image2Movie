@@ -4,9 +4,10 @@ A macOS application for turning a sequence of images into an H.264 MPEG-4 movie,
 with controls for frame rate, output size, and bit rate. Written in Objective-C
 using Cocoa and AVFoundation.
 
-This repository preserves the existing Image2Movie 3.0.1 source as a baseline for
-future updates. Application source and project build settings are unchanged from
-the local project; its existing Xcode scheme is now shared.
+This repository starts from the existing Image2Movie 3.0.1 source. The first
+compatibility pass keeps the original interface and AVFoundation encoder, raises
+the deployment target to macOS 12.0, removes an unused QTKit dependency, and adds
+explicit types to two dictionary-controller calls required by the current compiler.
 
 ## Project contents
 
@@ -28,22 +29,31 @@ control.
 
 ## Opening and building
 
-Open `Image2Movie.xcodeproj` in Xcode and select the `Image2Movie` scheme.
-The project can also be invoked from a terminal:
+Open `Image2Movie.xcodeproj` in Xcode, select the `Image2Movie` scheme and `My Mac`,
+and choose Run. The project can also be built from a terminal:
 
 ```sh
 xcodebuild -project Image2Movie.xcodeproj -scheme Image2Movie \
   -configuration Debug -derivedDataPath build CODE_SIGNING_ALLOWED=NO build
 ```
 
-This is a legacy project with a macOS 10.8 deployment target, QTKit framework
-references, and older Interface Builder resources. Compatibility with modern
-Xcode and macOS SDKs needs to be addressed as part of the upcoming update.
+The resulting app is at `build/Build/Products/Debug/Image2Movie.app`. To use it,
+drag image files from Finder into the image list, choose a frame rate and size,
+and click **Save Movie** to export an MP4.
 
-Import validation with Xcode 27.0 recognized the project, target, and shared
-scheme. All local project file references resolve. The build stops because
-Xcode 27.0 supports deployment targets starting at macOS 12.0, while this project
-targets 10.8; further build compatibility issues have not yet been assessed.
+Validated on macOS 27.0 (Apple silicon) with Xcode 27.0:
+
+- Debug and Release builds.
+- Application launch, original window, size selection, and Save Movie dialog.
+- Export of 60 generated PNG frames at 320 x 180 and 30 fps, both through the
+  encoder directly and through the app after loading its image controller from
+  the debugger. Both movies decoded to 60 ordered, nonblank frames over 2 seconds.
+
+The macOS 12.0 deployment target is the oldest supported by this Xcode version;
+older systems have not been tested. Existing deprecation warnings and legacy
+Interface Builder resources remain for a later modernization pass. The unused
+QTKit operation source files are retained for historical reference and are not
+part of the build.
 
 ## Licensing
 

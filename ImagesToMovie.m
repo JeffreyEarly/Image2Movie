@@ -7,6 +7,8 @@
 //
 
 #import "ImagesToMovie.h"
+#import "MovieFrameRenderer.h"
+#import <VideoToolbox/VideoToolbox.h>
 #import <errno.h>
 #import <stdio.h>
 
@@ -16,7 +18,6 @@
     BOOL _cancelRequested;
     dispatch_block_t _cancelExport;
 }
-- (BOOL) fillPixelBuffer:(CVPixelBufferRef)pixelBuffer withImageAtPath:(NSString *)imagePath error:(NSError **)error;
 @end
 
 static NSError *MovieError(NSString *description, NSError *underlyingError)
@@ -31,11 +32,112 @@ static NSError *MovieCancelledError(void)
     return [NSError errorWithDomain:NSCocoaErrorDomain code:NSUserCancelledError userInfo:nil];
 }
 
-NSString * const ProfileNameKey = @"ProfileNameKey";
-NSString * const ProfileMaxPixelsKey = @"ProfileMaxPixelsKey";
-NSString * const ProfileMaxPixelsPerSecondKey = @"ProfileMaxPixelsPerSecondKey";
-NSString * const ProfileReasonableBitRateKey = @"ProfileReasonableBitRateKey";
-NSString * const ProfileMaxBitRateKey = @"ProfileMaxBitRateKey";
+static NSString *VTKey(CFStringRef key) { return (__bridge NSString *)key; }
+
+// Query the very encoder and source format that the writer will use. Presets are
+// encoder-specific, and their availability can change with profile and frame rate.
+static NSDictionary *MovieCompressionSettings(AVVideoCodecType codec, MovieQualityMode quality,
+    NSUInteger bitRate, NSSize size, NSUInteger frameRate, OSType pixelFormat,
+    NSString **encoderID, NSError **error)
+{
+    CMVideoCodecType codecType = [codec isEqualToString:AVVideoCodecTypeH264] ? kCMVideoCodecType_H264 :
+        [codec isEqualToString:AVVideoCodecTypeHEVC] ? kCMVideoCodecType_HEVC : kCMVideoCodecType_AppleProRes422;
+    CFStringRef profile = [codec isEqualToString:AVVideoCodecTypeH264] ? kVTProfileLevel_H264_High_AutoLevel :
+        [codec isEqualToString:AVVideoCodecTypeHEVC] ? kVTProfileLevel_HEVC_Main10_AutoLevel : NULL;
+    NSDictionary *sourceAttributes = @{ (__bridge NSString *)kCVPixelBufferPixelFormatTypeKey : @(pixelFormat),
+        (__bridge NSString *)kCVPixelBufferWidthKey : @(size.width),
+        (__bridge NSString *)kCVPixelBufferHeightKey : @(size.height),
+        (__bridge NSString *)kCVPixelBufferIOSurfacePropertiesKey : @{} };
+    VTCompressionSessionRef session = NULL;
+    OSStatus status = VTCompressionSessionCreate(kCFAllocatorDefault, (int32_t)size.width, (int32_t)size.height,
+        codecType, NULL, (__bridge CFDictionaryRef)sourceAttributes, NULL, NULL, NULL, &session);
+    if (status != noErr || !session) {
+        if (error) *error = MovieError([NSString stringWithFormat:@"No %@ encoder accepts this frame size and pixel format (VideoToolbox error %d).", codec, (int)status], nil);
+        return nil;
+    }
+    NSDictionary *result = nil;
+    @try {
+        if (profile) {
+            status = VTSessionSetProperty(session, kVTCompressionPropertyKey_ProfileLevel, profile);
+            if (status != noErr) {
+                if (error) *error = MovieError([NSString stringWithFormat:@"The selected %@ encoder does not support the required profile (VideoToolbox error %d).", codec, (int)status], nil);
+                return nil;
+            }
+        }
+        status = VTSessionSetProperty(session, kVTCompressionPropertyKey_ExpectedFrameRate,
+            (__bridge CFNumberRef)@(frameRate));
+        if (status != noErr) {
+            if (error) *error = MovieError([NSString stringWithFormat:@"The selected encoder does not support %lu fps (VideoToolbox error %d).", (unsigned long)frameRate, (int)status], nil);
+            return nil;
+        }
+        CFTypeRef encoderValue = NULL;
+        status = VTSessionCopyProperty(session, kVTCompressionPropertyKey_EncoderID, NULL, &encoderValue);
+        if (status != noErr || !encoderValue || CFGetTypeID(encoderValue) != CFStringGetTypeID()) {
+            if (encoderValue) CFRelease(encoderValue);
+            if (error) *error = MovieError(@"The selected video encoder could not be identified.", nil);
+            return nil;
+        }
+        *encoderID = [(__bridge NSString *)encoderValue copy];
+        CFRelease(encoderValue);
+        if (!profile) { result = @{}; return result; }
+
+        CFTypeRef presetValue = NULL;
+        status = VTSessionCopyProperty(session, kVTCompressionPropertyKey_SupportedPresetDictionaries, NULL, &presetValue);
+        if (status != noErr || !presetValue || CFGetTypeID(presetValue) != CFDictionaryGetTypeID()) {
+            if (presetValue) CFRelease(presetValue);
+            if (error) *error = MovieError(@"The selected encoder does not provide compression presets for this format.", nil);
+            return nil;
+        }
+        NSDictionary *presets = (__bridge NSDictionary *)presetValue;
+        NSString *presetKey = VTKey(quality == MovieQualityCustomBitrate ? kVTCompressionPreset_HighQuality : kVTCompressionPreset_ConsistentQuality);
+        NSDictionary *preset = presets[presetKey];
+        if (![preset isKindOfClass:[NSDictionary class]]) {
+            CFRelease(presetValue);
+            if (error) *error = MovieError([NSString stringWithFormat:@"The selected %@ encoder does not support the %@ preset.", codec,
+                quality == MovieQualityCustomBitrate ? @"High Quality" : @"Consistent Quality"], nil);
+            return nil;
+        }
+        NSMutableDictionary *settings = [preset mutableCopy];
+        CFRelease(presetValue);
+        // Presets may include an alternative rate controller. Keep their tuning,
+        // but choose one explicit rate-control mode for this export.
+        NSArray *exclusiveKeys = @[VTKey(kVTCompressionPropertyKey_AverageBitRate),
+            VTKey(kVTCompressionPropertyKey_ConstantBitRate), VTKey(kVTCompressionPropertyKey_VariableBitRate),
+            VTKey(kVTCompressionPropertyKey_ConstantQualityFactor)];
+        [settings removeObjectsForKeys:exclusiveKeys];
+        if (quality == MovieQualityCustomBitrate) {
+            [settings removeObjectForKey:VTKey(kVTCompressionPropertyKey_DataRateLimits)];
+            settings[VTKey(kVTCompressionPropertyKey_VariableBitRate)] = @(bitRate);
+            settings[VTKey(kVTCompressionPropertyKey_VBVMaxBitRate)] = @(bitRate * 3 / 2);
+        } else {
+            settings[VTKey(kVTCompressionPropertyKey_ConstantQualityFactor)] = quality == MovieQualityHigh ? @0.75f : @0.50f;
+        }
+        settings[VTKey(kVTCompressionPropertyKey_ProfileLevel)] = (__bridge NSString *)profile;
+        settings[VTKey(kVTCompressionPropertyKey_ExpectedFrameRate)] = @(frameRate);
+        settings[VTKey(kVTCompressionPropertyKey_MaxKeyFrameInterval)] = @(frameRate * 3);
+        CFDictionaryRef supported = NULL;
+        status = VTSessionCopySupportedPropertyDictionary(session, &supported);
+        NSDictionary *available = (__bridge NSDictionary *)supported;
+        for (NSString *key in settings) {
+            if (!available[key]) {
+                if (error) *error = MovieError([NSString stringWithFormat:@"The selected encoder does not support the required %@ setting.", key], nil);
+                if (supported) CFRelease(supported);
+                return nil;
+            }
+        }
+        if (supported) CFRelease(supported);
+        status = VTSessionSetProperties(session, (__bridge CFDictionaryRef)settings);
+        if (status != noErr) {
+            if (error) *error = MovieError([NSString stringWithFormat:@"The selected encoder rejected the quality settings (VideoToolbox error %d).", (int)status], nil);
+            return nil;
+        }
+        result = settings;
+    } @finally {
+        VTCompressionSessionInvalidate(session);
+        CFRelease(session);
+    }
+    return result;
+}
 
 @implementation ImagesToMovie
 
@@ -56,26 +158,12 @@ NSString * const ProfileMaxBitRateKey = @"ProfileMaxBitRateKey";
 		self.value = 0;
 		self.frameRate = 30;
 		self.frameSize = NSMakeSize(1080, 720);
-        self.codec = AVVideoCodecTypeH264;
+        self.codec = AVVideoCodecTypeHEVC;
+        self.qualityMode = MovieQualityHigh;
+        self.averageBitRate = 20000000;
 	}
 	
 	return self;
-}
-
-- (NSDictionary *) codecProfiles
-{
-    NSDictionary *profiles = @{ AVVideoProfileLevelH264Main30 :
-                                    @{ProfileNameKey:@"Main 3.0", ProfileMaxPixelsKey:@(414720), ProfileMaxPixelsPerSecondKey:@(10368000), ProfileMaxBitRateKey:@(10000000), ProfileReasonableBitRateKey:@(1600000)},
-                                AVVideoProfileLevelH264Main31 :
-                                    @{ProfileNameKey:@"Main 3.1", ProfileMaxPixelsKey:@(921600), ProfileMaxPixelsPerSecondKey:@(27648000), ProfileMaxBitRateKey:@(14000000), ProfileReasonableBitRateKey:@(5000000)},
-                                AVVideoProfileLevelH264Main32 :
-                                    @{ProfileNameKey:@"Main 3.2", ProfileMaxPixelsKey:@(1310720), ProfileMaxPixelsPerSecondKey:@(55296000), ProfileMaxBitRateKey:@(20000000), ProfileReasonableBitRateKey:@(5000000)},
-                                AVVideoProfileLevelH264Main41 :
-                                    @{ProfileNameKey:@"Main 4.1", ProfileMaxPixelsKey:@(2097152), ProfileMaxPixelsPerSecondKey:@(62914560), ProfileMaxBitRateKey:@(50000000), ProfileReasonableBitRateKey:@(9000000)},
-                                AVVideoProfileLevelH264MainAutoLevel :
-                                    @{ProfileNameKey:@"Main Auto (4K)", ProfileMaxPixelsKey:@(3840 * 2160), ProfileMaxPixelsPerSecondKey:@(3840 * 2160 * 30), ProfileMaxBitRateKey:@(50000000), ProfileReasonableBitRateKey:@(36000000)}};
-    
-    return profiles;
 }
 
 /************************************************/
@@ -116,23 +204,19 @@ NSString * const ProfileMaxBitRateKey = @"ProfileMaxBitRateKey";
     NSSize size = self.frameSize;
     NSUInteger frameRate = self.frameRate;
     NSUInteger bitRate = self.averageBitRate;
+    MovieQualityMode quality = self.qualityMode;
     AVVideoCodecType codec = [self.codec copy];
     BOOL h264 = [codec isEqualToString:AVVideoCodecTypeH264];
     BOOL hevc = [codec isEqualToString:AVVideoCodecTypeHEVC];
     BOOL proRes = [codec isEqualToString:AVVideoCodecTypeAppleProRes422];
-    NSString *profile = [self.profile copy];
-    NSDictionary *limits = profile ? self.codecProfiles[profile] : nil;
-    double pixels = size.width * size.height;
-    BOOL validCompression = proRes || (hevc && bitRate >= 1 && bitRate <= 50000000) ||
-        (h264 && limits && bitRate >= 1 && bitRate <= [limits[ProfileMaxBitRateKey] unsignedIntegerValue] &&
-         pixels <= [limits[ProfileMaxPixelsKey] doubleValue] &&
-         pixels * frameRate <= [limits[ProfileMaxPixelsPerSecondKey] doubleValue]);
     if (!imagePaths.count || !destinationPath.isAbsolutePath ||
         !isfinite(size.width) || !isfinite(size.height) ||
         size.width < 1 || size.height < 1 || size.width > 3840 || size.height > 2160 ||
         floor(size.width) != size.width || floor(size.height) != size.height ||
-        frameRate < 1 || frameRate > 30 || !validCompression) {
-        validationError = MovieError(@"Choose readable images, a valid destination, and supported movie dimensions, frame rate, codec, profile, and bit rate.", nil);
+        frameRate < 1 || frameRate > 30 || !(h264 || hevc || proRes) ||
+        (!proRes && quality != MovieQualityStandard && quality != MovieQualityHigh && quality != MovieQualityCustomBitrate) ||
+        (!proRes && quality == MovieQualityCustomBitrate && (bitRate < 100000 || bitRate > 50000000))) {
+        validationError = MovieError(@"Choose input images, an absolute destination, movie dimensions up to 3840 × 2160, 1–30 fps, and a supported codec and quality. Custom bit rate must be 0.1–50 Mbps.", nil);
     }
     if (validationError) {
         dispatch_async(dispatch_get_main_queue(), ^{
@@ -148,6 +232,7 @@ NSString * const ProfileMaxBitRateKey = @"ProfileMaxBitRateKey";
     __block AVAssetWriter *writer = nil;
     __block AVAssetWriterInput *writerInput = nil;
     __block AVAssetWriterInputPixelBufferAdaptor *adaptor = nil;
+    __block MovieFrameRenderer *renderer = nil;
     __block NSUInteger frame = 0;
     __block BOOL finishing = NO;
     __block BOOL finished = NO;
@@ -179,6 +264,7 @@ NSString * const ProfileMaxBitRateKey = @"ProfileMaxBitRateKey";
                 error.localizedDescription ?: @"The movie was saved.", cleanupError.localizedDescription], error ?: cleanupError);
         }
         adaptor = nil;
+        renderer = nil;
         writerInput = nil;
         writer = nil;
         dispatch_async(dispatch_get_main_queue(), ^{
@@ -207,29 +293,36 @@ NSString * const ProfileMaxBitRateKey = @"ProfileMaxBitRateKey";
         if (finished) return;
         if (isCancelled()) { finish(MovieCancelledError()); return; }
         NSError *error = nil;
+        renderer = [[MovieFrameRenderer alloc] initWithFrameSize:size codec:codec];
+        if (!renderer) { finish(MovieError(@"The movie frame renderer could not be created.", nil)); return; }
+        if (isCancelled()) { finish(MovieCancelledError()); return; }
+        NSString *encoderID = nil;
+        NSDictionary *compression = MovieCompressionSettings(codec, quality, bitRate, size, frameRate,
+            renderer.pixelFormat, &encoderID, &error);
+        if (!compression) { finish(error); return; }
+        if (isCancelled()) { finish(MovieCancelledError()); return; }
         writer = [[AVAssetWriter alloc] initWithURL:[NSURL fileURLWithPath:temporaryPath] fileType:fileType error:&error];
         if (!writer) { finish(MovieError(@"The movie file could not be created.", error)); return; }
         self.movieWriter = writer;
         NSMutableDictionary *videoSettings = [@{ AVVideoCodecKey : codec,
                                                 AVVideoWidthKey : @(size.width),
-                                                AVVideoHeightKey : @(size.height) } mutableCopy];
-        // ProRes controls its own data rate and has no H.264-style profile or GOP.
+                                                AVVideoHeightKey : @(size.height),
+                                                AVVideoEncoderSpecificationKey : @{ VTKey(kVTVideoEncoderSpecification_EncoderID) : encoderID } } mutableCopy];
         if (!proRes) {
-            NSMutableDictionary *compression = [@{ AVVideoAverageBitRateKey : @(bitRate),
-                AVVideoMaxKeyFrameIntervalKey : @(frameRate * 3),
-                AVVideoExpectedSourceFrameRateKey : @(frameRate) } mutableCopy];
-            if (h264) compression[AVVideoProfileLevelKey] = profile;
             videoSettings[AVVideoCompressionPropertiesKey] = compression;
+            videoSettings[AVVideoColorPropertiesKey] = @{
+                AVVideoColorPrimariesKey : AVVideoColorPrimaries_ITU_R_709_2,
+                AVVideoTransferFunctionKey : AVVideoTransferFunction_ITU_R_709_2,
+                AVVideoYCbCrMatrixKey : AVVideoYCbCrMatrix_ITU_R_709_2 };
         }
         if (![writer canApplyOutputSettings:videoSettings forMediaType:AVMediaTypeVideo]) {
-            finish(MovieError(@"This computer cannot encode the selected movie settings.", nil)); return;
+            finish(MovieError(@"The selected encoder cannot apply these codec, profile, and quality settings in AVAssetWriter.", nil)); return;
         }
         writerInput = [AVAssetWriterInput assetWriterInputWithMediaType:AVMediaTypeVideo outputSettings:videoSettings];
-        NSDictionary *bufferAttributes = @{ (__bridge NSString *)kCVPixelBufferPixelFormatTypeKey : @(kCVPixelFormatType_32ARGB),
+        NSDictionary *bufferAttributes = @{ (__bridge NSString *)kCVPixelBufferPixelFormatTypeKey : @(renderer.pixelFormat),
                                             (__bridge NSString *)kCVPixelBufferWidthKey : @(size.width),
                                             (__bridge NSString *)kCVPixelBufferHeightKey : @(size.height),
-                                            (__bridge NSString *)kCVPixelBufferCGImageCompatibilityKey : @YES,
-                                            (__bridge NSString *)kCVPixelBufferCGBitmapContextCompatibilityKey : @YES };
+                                            (__bridge NSString *)kCVPixelBufferIOSurfacePropertiesKey : @{} };
         adaptor = [AVAssetWriterInputPixelBufferAdaptor assetWriterInputPixelBufferAdaptorWithAssetWriterInput:writerInput sourcePixelBufferAttributes:bufferAttributes];
         if (![writer canAddInput:writerInput]) {
             finish(MovieError(@"The movie writer could not accept its video input.", nil)); return;
@@ -252,7 +345,7 @@ NSString * const ProfileMaxBitRateKey = @"ProfileMaxBitRateKey";
                         finish(MovieError(@"A movie frame buffer could not be allocated.", nil)); return;
                     }
                     NSError *frameError = nil;
-                    BOOL drewFrame = [self fillPixelBuffer:buffer withImageAtPath:imagePaths[frame] error:&frameError];
+                    BOOL drewFrame = [renderer renderImageAtPath:imagePaths[frame] intoPixelBuffer:buffer error:&frameError];
                     BOOL appended = drewFrame && !isCancelled() && [adaptor appendPixelBuffer:buffer withPresentationTime:CMTimeMake((int64_t)frame, (int32_t)frameRate)];
                     CVPixelBufferRelease(buffer);
                     if (!appended) {
@@ -311,65 +404,6 @@ NSString * const ProfileMaxBitRateKey = @"ProfileMaxBitRateKey";
     }
     
     return targetSize;
-}
-
-- (NSImage *) imageAtPath:(NSString *)imagePath error:(NSError **)error
-{
-    NSImage *image = [[NSImage alloc] initWithContentsOfFile:imagePath];
-    for (NSImageRep *representation in image.representations) {
-        if (![representation isKindOfClass:[NSBitmapImageRep class]]) continue;
-        // NSImage and CGImage can appear valid while their lazy decoder fails.
-        CGImageRef decodedImage = [(NSBitmapImageRep *)representation CGImage];
-        CFDataRef pixels = decodedImage ? CGDataProviderCopyData(CGImageGetDataProvider(decodedImage)) : NULL;
-        BOOL complete = pixels && CFDataGetLength(pixels) > 0;
-        if (pixels) CFRelease(pixels);
-        if (!complete) {
-            image = nil;
-            break;
-        }
-    }
-    if (!image.isValid) {
-        if (error) *error = MovieError([NSString stringWithFormat:@"The image “%@” could not be completely decoded.", imagePath.lastPathComponent], nil);
-        return nil;
-    }
-    return image;
-}
-
-- (BOOL) fillPixelBuffer:(CVPixelBufferRef)pixelBuffer withImageAtPath:(NSString *)imagePath error:(NSError **)error
-{
-    NSImage *image = [self imageAtPath:imagePath error:error];
-    if (!image) return NO;
-    CVReturn result = CVPixelBufferLockBaseAddress(pixelBuffer, 0);
-    if (result != kCVReturnSuccess) {
-        if (error) *error = MovieError(@"A movie frame buffer could not be locked.", nil);
-        return NO;
-    }
-    CGColorSpaceRef colorSpace = CGColorSpaceCreateWithName(kCGColorSpaceGenericRGB);
-    size_t width = CVPixelBufferGetWidth(pixelBuffer);
-    size_t height = CVPixelBufferGetHeight(pixelBuffer);
-    CGContextRef context = colorSpace ? CGBitmapContextCreate(CVPixelBufferGetBaseAddress(pixelBuffer), width, height, 8,
-        CVPixelBufferGetBytesPerRow(pixelBuffer), colorSpace, (CGBitmapInfo)kCGImageAlphaNoneSkipFirst) : NULL;
-    BOOL drewImage = NO;
-    if (context) {
-        NSRect bounds = NSMakeRect(0, 0, width, height);
-        NSGraphicsContext *graphicsContext = [NSGraphicsContext graphicsContextWithCGContext:context flipped:NO];
-        CGImageRef decodedImage = [image CGImageForProposedRect:&bounds context:graphicsContext hints:nil];
-        if (decodedImage) {
-            CGContextSetRGBFillColor(context, 0, 0, 0, 1);
-            CGContextFillRect(context, CGRectMake(0, 0, width, height));
-            CGContextSetInterpolationQuality(context, kCGInterpolationHigh);
-            CGContextDrawImage(context, CGRectMake(0, 0, width, height), decodedImage);
-            drewImage = YES;
-        }
-        CGContextRelease(context);
-    }
-    if (colorSpace) CGColorSpaceRelease(colorSpace);
-    result = CVPixelBufferUnlockBaseAddress(pixelBuffer, 0);
-    if (result != kCVReturnSuccess) drewImage = NO;
-    if (!drewImage && error) {
-        *error = MovieError([NSString stringWithFormat:@"The image “%@” could not be decoded into a movie frame.", imagePath.lastPathComponent], nil);
-    }
-    return drewImage;
 }
 
 - (void) cancel

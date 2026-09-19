@@ -6,12 +6,12 @@
 //  Copyright (c) 2011 __MyCompanyName__. All rights reserved.
 //
 
-#import <Foundation/Foundation.h>
+#import <AppKit/AppKit.h>
 #import "ImagesToMovie.h"
 #import "ImagesToMovieController.h"
 #import "ImageTableController.h"
 
-@interface PrimaryWindowController : NSWindowController
+@interface PrimaryWindowController : NSWindowController <NSWindowDelegate, NSUserInterfaceValidations>
 
 @property (strong) IBOutlet ImagesToMovieController *imagesToMovieController;
 @property (strong) IBOutlet ImageTableController *imageTableController;
@@ -24,12 +24,13 @@
 #pragma mark Controller
 #pragma mark
 
-- (IBAction) openImageFilesAction: (id) sender;
+- (IBAction)openImageFilesAction:(id)sender;
+- (IBAction)exportMovie:(id)sender;
 
 // This will either build the movie, or cancel the movie that's being built.
 @property(readwrite, copy, nonatomic) NSString *buttonTitle;
 @property(readonly, nonatomic) BOOL saveOrCancelEnabled;
-- (IBAction) buttonClicked: (id) sender;
+- (IBAction)buttonClicked:(id)sender;
 
 /************************************************/
 /*		Model									*/

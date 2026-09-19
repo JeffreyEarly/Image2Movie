@@ -9,13 +9,11 @@
 #import <Foundation/Foundation.h>
 #import <AVFoundation/AVFoundation.h>
 
-@class NSImage;
-
-NSString * const ProfileNameKey;
-NSString * const ProfileMaxPixelsKey;
-NSString * const ProfileMaxPixelsPerSecondKey;
-NSString * const ProfileReasonableBitRateKey;
-NSString * const ProfileMaxBitRateKey;
+typedef NS_ENUM(NSInteger, MovieQualityMode) {
+    MovieQualityStandard = 0,
+    MovieQualityHigh = 1,
+    MovieQualityCustomBitrate = 2
+};
 
 @interface ImagesToMovie : NSObject
 
@@ -31,10 +29,8 @@ NSString * const ProfileMaxBitRateKey;
 @property(readwrite, assign, nonatomic) NSUInteger frameRate;
 @property NSSize frameSize;
 @property NSUInteger averageBitRate;
-@property NSString *profile;
-@property(copy) AVVideoCodecType codec; // H.264 by default
-
-@property(readonly, nonatomic) NSDictionary *codecProfiles;
+@property MovieQualityMode qualityMode;
+@property(copy) AVVideoCodecType codec; // HEVC by default
 
 /************************************************/
 /*		Quicktime Movie Output					*/
@@ -51,9 +47,6 @@ NSString * const ProfileMaxBitRateKey;
 
 // With tolerance allows some fudge factor.
 - (NSSize) resizeOriginal: (NSSize) originalSize intoTargetSize: (NSSize) targetSize withTolerance: (BOOL) tolerateSlop;
-
-// Loads a complete raster image or a supported vector image.
-- (NSImage *) imageAtPath:(NSString *)imagePath error:(NSError **)error;
 
 - (void) cancel;
 

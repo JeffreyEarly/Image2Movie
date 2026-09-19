@@ -7,6 +7,9 @@
 //
 
 #import <AppKit/AppKit.h>
+#import <UniformTypeIdentifiers/UniformTypeIdentifiers.h>
+
+@class ImagesToMovie;
 
 @interface ImageTableView : NSTableView <NSUserInterfaceValidations>
 - (IBAction)delete:(id)sender;
@@ -16,6 +19,11 @@
 
 @property(unsafe_unretained) IBOutlet NSTableView *imageTable;
 @property(unsafe_unretained) IBOutlet NSArrayController *imagePathArrayController;
+@property(nonatomic, weak) ImagesToMovie *imagesToMovie;
+@property(nonatomic, strong) NSUndoManager *undoManager;
+
++ (NSArray<UTType *> *)supportedImageContentTypes;
+- (BOOL)importImageURLs:(NSArray<NSURL *> *)URLs;
 
 - (IBAction)removeSelectedImages:(id)sender;
 

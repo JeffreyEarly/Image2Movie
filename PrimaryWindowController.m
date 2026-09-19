@@ -7,6 +7,51 @@
 //
 
 #import "PrimaryWindowController.h"
+#import <UniformTypeIdentifiers/UniformTypeIdentifiers.h>
+
+@interface MovieUndoManager : NSUndoManager
+@property(weak) ImagesToMovie *imagesToMovie;
+@end
+
+@implementation MovieUndoManager
+
+- (BOOL)canUndo
+{
+    return !self.imagesToMovie.movieCreationInProgress && super.canUndo;
+}
+
+- (BOOL)canRedo
+{
+    return !self.imagesToMovie.movieCreationInProgress && super.canRedo;
+}
+
+- (void)undo
+{
+    if (!self.imagesToMovie.movieCreationInProgress) [super undo];
+}
+
+- (void)redo
+{
+    if (!self.imagesToMovie.movieCreationInProgress) [super redo];
+}
+
+@end
+
+static NSURL *PanelDirectoryURL(NSString *defaultsKey)
+{
+    NSString *path = [[NSUserDefaults standardUserDefaults] stringForKey:defaultsKey];
+    BOOL isDirectory = NO;
+    NSFileManager *fileManager = [NSFileManager defaultManager];
+    if (path.length == 0 || ![fileManager fileExistsAtPath:path isDirectory:&isDirectory] || !isDirectory ||
+        ![fileManager isReadableFileAtPath:path] || ![fileManager isExecutableFileAtPath:path]) {
+        path = NSHomeDirectory();
+    }
+    return [NSURL fileURLWithPath:path isDirectory:YES];
+}
+
+@interface PrimaryWindowController ()
+@property(strong) MovieUndoManager *movieUndoManager;
+@end
 
 @implementation PrimaryWindowController
 @synthesize imagesToMovieController;
@@ -28,7 +73,13 @@
 {
     [super windowDidLoad];
 
+    self.window.delegate = self;
+    self.movieUndoManager = [[MovieUndoManager alloc] init];
+    self.movieUndoManager.levelsOfUndo = 20;
+    self.movieUndoManager.imagesToMovie = self.imagesToMovie;
     self.imagesToMovieController.imagesToMovie = self.imagesToMovie;
+    self.imageTableController.imagesToMovie = self.imagesToMovie;
+    self.imageTableController.undoManager = self.movieUndoManager;
 }
 
 - (void)dealloc
@@ -44,16 +95,22 @@
 #pragma mark Open Images
 #pragma mark
 
-- (IBAction) openImageFilesAction: (id) sender
+- (IBAction)openImageFilesAction:(id)sender
 {
+	if (self.imagesToMovie.movieCreationInProgress || self.window.attachedSheet) return;
 	NSOpenPanel *openPanel = [NSOpenPanel openPanel];
 	openPanel.allowsMultipleSelection = YES;
-	openPanel.directoryURL = [NSURL fileURLWithPath: [[NSUserDefaults standardUserDefaults] objectForKey: @"defaultImagesPath"]];
+	openPanel.canChooseFiles = YES;
+	openPanel.canChooseDirectories = NO;
+	openPanel.allowedContentTypes = [ImageTableController supportedImageContentTypes];
+	openPanel.directoryURL = PanelDirectoryURL(@"defaultImagesPath");
 	
-	[openPanel beginSheetModalForWindow: self.window completionHandler: ^(NSInteger result) {
-		if (result == NSFileHandlingPanelOKButton && openPanel.URLs.count) {
+	__weak typeof(self) weakSelf = self;
+	[openPanel beginSheetModalForWindow:self.window completionHandler:^(NSModalResponse result) {
+		PrimaryWindowController *strongSelf = weakSelf;
+		if (strongSelf && result == NSModalResponseOK && openPanel.URLs.count && !strongSelf.imagesToMovie.movieCreationInProgress) {
 			[[NSUserDefaults standardUserDefaults] setObject:[openPanel.URL.path stringByDeletingLastPathComponent] forKey:@"defaultImagesPath"];
-			[[self.imagesToMovie mutableArrayValueForKey:@"imagePaths"] addObjectsFromArray:[openPanel.URLs valueForKeyPath:@"path"]];
+			[strongSelf.imageTableController importImageURLs:openPanel.URLs];
 		}
 	}];
 }
@@ -78,31 +135,58 @@
     return self.imagesToMovie.movieCreationInProgress || self.imagesToMovieController.readyToCreateMovie;
 }
 
-- (IBAction) buttonClicked: (id) sender
+- (IBAction)buttonClicked:(id)sender
 {
-	if ( !self.imagesToMovie.movieCreationInProgress)
-	{
-		if (!self.imagesToMovieController.readyToCreateMovie) return;
-		NSSavePanel *savePanel = [NSSavePanel savePanel];
-		savePanel.directoryURL = [NSURL fileURLWithPath: [[NSUserDefaults standardUserDefaults] objectForKey: @"defaultMoviePath"] ?: NSHomeDirectory()];
-		savePanel.allowedFileTypes = @[[self.imagesToMovieController.codec isEqualToString:AVVideoCodecTypeAppleProRes422] ? @"mov" : @"mp4"];
-		
-		[savePanel beginSheetModalForWindow: self.window completionHandler: ^(NSInteger result) {
-			if (result == NSFileHandlingPanelOKButton) {
-				[[NSUserDefaults standardUserDefaults] setObject:[savePanel.URL.path stringByDeletingLastPathComponent] forKey:@"defaultMoviePath"];
-                [self.imagesToMovieController updateModelWithNewSettings];
-				[self.imagesToMovie createMovieAtPath:savePanel.URL.path completionHandler:^(NSError *error) {
-                    if (error && !([error.domain isEqualToString:NSCocoaErrorDomain] && error.code == NSUserCancelledError)) {
-                        [self.window presentError:error];
-                    }
-                }];
-			}
-		}];
-	}
-	else
-	{
+	if (self.imagesToMovie.movieCreationInProgress) {
 		[self.imagesToMovie cancel];
-	}
+	} else {
+        [self exportMovie:sender];
+    }
+}
+
+- (IBAction)exportMovie:(id)sender
+{
+    if (self.imagesToMovie.movieCreationInProgress || self.window.attachedSheet) return;
+    // Ending field editing asks formatters to validate and commit their current values.
+    if (![self.window makeFirstResponder:nil] || !self.imagesToMovieController.readyToCreateMovie) return;
+
+    NSSavePanel *savePanel = [NSSavePanel savePanel];
+    savePanel.directoryURL = PanelDirectoryURL(@"defaultMoviePath");
+    BOOL proRes = [self.imagesToMovieController.codec isEqualToString:AVVideoCodecTypeAppleProRes422];
+    savePanel.allowedContentTypes = @[proRes ? UTTypeQuickTimeMovie : UTTypeMPEG4Movie];
+
+    __weak typeof(self) weakSelf = self;
+    [savePanel beginSheetModalForWindow:self.window completionHandler:^(NSModalResponse result) {
+        PrimaryWindowController *strongSelf = weakSelf;
+        if (result != NSModalResponseOK || !strongSelf || strongSelf.imagesToMovie.movieCreationInProgress ||
+            !strongSelf.imagesToMovieController.readyToCreateMovie) return;
+        [[NSUserDefaults standardUserDefaults] setObject:savePanel.URL.path.stringByDeletingLastPathComponent
+                                                  forKey:@"defaultMoviePath"];
+        [strongSelf.imagesToMovieController updateModelWithNewSettings];
+        [strongSelf.imagesToMovie createMovieAtPath:savePanel.URL.path completionHandler:^(NSError *error) {
+            if (error && !([error.domain isEqualToString:NSCocoaErrorDomain] && error.code == NSUserCancelledError)) {
+                [strongSelf.window presentError:error];
+            }
+        }];
+    }];
+}
+
+- (BOOL)validateUserInterfaceItem:(id<NSValidatedUserInterfaceItem>)item
+{
+    SEL action = item.action;
+    if (action == @selector(openImageFilesAction:)) {
+        return !self.imagesToMovie.movieCreationInProgress && self.window.attachedSheet == nil;
+    }
+    if (action == @selector(exportMovie:)) {
+        return !self.imagesToMovie.movieCreationInProgress && self.imagesToMovieController.readyToCreateMovie &&
+            self.window.attachedSheet == nil;
+    }
+    return YES;
+}
+
+- (NSUndoManager *)windowWillReturnUndoManager:(NSWindow *)window
+{
+    return self.movieUndoManager;
 }
 
 - (void) observeValueForKeyPath:(NSString *)keyPath ofObject:(id)object change:(NSDictionary *)change context:(void *)context

@@ -7,8 +7,21 @@
 //
 
 #import "ImageTableController.h"
+#import "ImagesToMovie.h"
 
 static NSPasteboardType const ImageRowPasteboardType = @"org.image2movie.row-index";
+
+@interface ImageTableState : NSObject
+@property(nonatomic, copy) NSArray<NSString *> *paths;
+@property(nonatomic, copy) NSArray<NSSortDescriptor *> *sortDescriptors;
+@property(nonatomic, copy) NSIndexSet *selectionIndexes;
+@end
+@implementation ImageTableState
+@end
+
+@interface ImageTableController ()
+- (void)restoreState:(ImageTableState *)state actionName:(NSString *)actionName;
+@end
 
 @implementation ImageTableView
 
@@ -33,7 +46,10 @@ static NSPasteboardType const ImageRowPasteboardType = @"org.image2movie.row-ind
 
 - (BOOL)validateUserInterfaceItem:(id<NSValidatedUserInterfaceItem>)item
 {
-    return item.action != @selector(delete:) || (self.enabled && self.selectedRowIndexes.count > 0);
+    ImageTableController *controller = (ImageTableController *)self.dataSource;
+    BOOL canDelete = self.enabled && controller.imagesToMovie &&
+        !controller.imagesToMovie.movieCreationInProgress && self.selectedRowIndexes.count > 0;
+    return item.action != @selector(delete:) || canDelete;
 }
 
 @end
@@ -44,13 +60,187 @@ static NSPasteboardType const ImageRowPasteboardType = @"org.image2movie.row-ind
 
 - (void) awakeFromNib
 {
-	[self.imageTable registerForDraggedTypes:[NSArray arrayWithObjects: NSFilenamesPboardType, ImageRowPasteboardType, nil]];
+	[self.imageTable registerForDraggedTypes:@[NSPasteboardTypeFileURL, ImageRowPasteboardType]];
 }
 
 - (IBAction)removeSelectedImages:(id)sender
 {
-    if (!self.imageTable.enabled) return;
-    [self.imagePathArrayController removeObjectsAtArrangedObjectIndexes:self.imageTable.selectedRowIndexes];
+    if (![self canMutate]) return;
+    NSIndexSet *indexes = self.imageTable.selectedRowIndexes;
+    NSArray *arranged = [self.imagePathArrayController.arrangedObjects copy];
+    if (!indexes.count || indexes.lastIndex >= arranged.count) return;
+
+    NSArray<NSString *> *modelPaths = [self.imagesToMovie.imagePaths copy];
+    NSMutableIndexSet *unusedModelIndexes = [NSMutableIndexSet indexSetWithIndexesInRange:NSMakeRange(0, modelPaths.count)];
+    NSMutableIndexSet *modelIndexesToRemove = [NSMutableIndexSet indexSet];
+    for (NSUInteger arrangedIndex = 0; arrangedIndex < arranged.count; arrangedIndex++) {
+        NSString *arrangedPath = arranged[arrangedIndex];
+        NSUInteger modelIndex = [unusedModelIndexes indexPassingTest:^BOOL(NSUInteger candidate, BOOL *stop) {
+            return modelPaths[candidate] == arrangedPath;
+        }];
+        if (modelIndex == NSNotFound) {
+            modelIndex = [unusedModelIndexes indexPassingTest:^BOOL(NSUInteger candidate, BOOL *stop) {
+                return [modelPaths[candidate] isEqual:arrangedPath];
+            }];
+        }
+        if (modelIndex == NSNotFound) return;
+        [unusedModelIndexes removeIndex:modelIndex];
+        if ([indexes containsIndex:arrangedIndex]) [modelIndexesToRemove addIndex:modelIndex];
+    }
+    NSMutableArray *paths = [modelPaths mutableCopy];
+    [paths removeObjectsAtIndexes:modelIndexesToRemove];
+    [self replacePaths:paths
+       sortDescriptors:self.imagePathArrayController.sortDescriptors
+      selectionIndexes:[NSIndexSet indexSet]
+            actionName:@"Remove Images"];
+}
+
++ (NSArray<UTType *> *)supportedImageContentTypes
+{
+    static NSArray<UTType *> *types;
+    static dispatch_once_t onceToken;
+    dispatch_once(&onceToken, ^{
+        NSMutableArray<UTType *> *result = [NSMutableArray array];
+        NSMutableSet<NSString *> *identifiers = [NSMutableSet set];
+        for (NSString *identifier in NSImage.imageTypes) {
+            UTType *type = [UTType typeWithIdentifier:identifier];
+            if (type && ![identifiers containsObject:type.identifier]) {
+                [identifiers addObject:type.identifier];
+                [result addObject:type];
+            }
+        }
+        types = [result copy];
+    });
+    return types;
+}
+
+- (BOOL)importImageURLs:(NSArray<NSURL *> *)URLs
+{
+    if (![self canMutate] || !URLs.count) return NO;
+
+    NSMutableArray<NSString *> *accepted = [NSMutableArray array];
+    NSMutableArray<NSString *> *folders = [NSMutableArray array];
+    NSMutableArray<NSString *> *unsupported = [NSMutableArray array];
+    NSMutableArray<NSString *> *unreadable = [NSMutableArray array];
+    [self classifyURLs:URLs acceptedPaths:accepted folders:folders unsupported:unsupported unreadable:unreadable];
+
+    if (accepted.count && [self canMutate]) {
+        NSMutableArray *paths = [self.imagesToMovie.imagePaths mutableCopy];
+        [paths addObjectsFromArray:accepted];
+        [self replacePaths:paths
+           sortDescriptors:self.imagePathArrayController.sortDescriptors
+          selectionIndexes:self.imageTable.selectedRowIndexes
+                actionName:@"Add Images"];
+    } else {
+        [accepted removeAllObjects];
+    }
+
+    if (folders.count || unsupported.count || unreadable.count)
+        [self presentSkippedImportAlertWithFolders:folders unsupported:unsupported unreadable:unreadable];
+    return accepted.count > 0;
+}
+
+- (BOOL)canMutate
+{
+    return self.imagesToMovie && !self.imagesToMovie.movieCreationInProgress;
+}
+
+- (ImageTableState *)currentState
+{
+    ImageTableState *state = [[ImageTableState alloc] init];
+    state.paths = [self.imagesToMovie.imagePaths copy] ?: @[];
+    state.sortDescriptors = [self.imagePathArrayController.sortDescriptors copy] ?: @[];
+    state.selectionIndexes = [self.imageTable.selectedRowIndexes copy] ?: [NSIndexSet indexSet];
+    return state;
+}
+
+- (void)replacePaths:(NSArray<NSString *> *)paths
+     sortDescriptors:(NSArray<NSSortDescriptor *> *)sortDescriptors
+    selectionIndexes:(NSIndexSet *)selectionIndexes
+          actionName:(NSString *)actionName
+{
+    if (![self canMutate]) return;
+    ImageTableState *before = [self currentState];
+    NSArray *sorts = sortDescriptors ?: @[];
+    NSIndexSet *selection = selectionIndexes ?: [NSIndexSet indexSet];
+    if ([before.paths isEqual:paths] && [before.sortDescriptors isEqual:sorts] &&
+        [before.selectionIndexes isEqual:selection]) return;
+
+    self.imagesToMovie.imagePaths = [paths mutableCopy];
+    self.imagePathArrayController.sortDescriptors = sorts;
+    [self.imagePathArrayController rearrangeObjects];
+    NSMutableIndexSet *validSelection = [selection mutableCopy];
+    NSUInteger arrangedCount = [self.imagePathArrayController.arrangedObjects count];
+    [validSelection removeIndexesInRange:NSMakeRange(arrangedCount, NSUIntegerMax - arrangedCount)];
+    self.imagePathArrayController.selectionIndexes = validSelection;
+    [self.imageTable selectRowIndexes:validSelection byExtendingSelection:NO];
+
+    if (self.undoManager) {
+        [self.undoManager registerUndoWithTarget:self handler:^(ImageTableController *target) {
+            [target restoreState:before actionName:actionName];
+        }];
+        self.undoManager.actionName = actionName;
+    }
+}
+
+- (void)restoreState:(ImageTableState *)state actionName:(NSString *)actionName
+{
+    if (![self canMutate]) return;
+    [self replacePaths:state.paths sortDescriptors:state.sortDescriptors
+      selectionIndexes:state.selectionIndexes actionName:actionName];
+}
+
+- (void)classifyURLs:(NSArray<NSURL *> *)URLs
+       acceptedPaths:(NSMutableArray<NSString *> *)accepted
+             folders:(NSMutableArray<NSString *> *)folders
+         unsupported:(NSMutableArray<NSString *> *)unsupported
+          unreadable:(NSMutableArray<NSString *> *)unreadable
+{
+    NSFileManager *fileManager = NSFileManager.defaultManager;
+    NSArray<UTType *> *supportedTypes = self.class.supportedImageContentTypes;
+    for (NSURL *URL in URLs) {
+        if (![URL isKindOfClass:NSURL.class] || !URL.isFileURL) {
+            [unreadable addObject:URL.lastPathComponent ?: URL.description ?: @"Unknown item"];
+            continue;
+        }
+        NSNumber *isDirectory;
+        NSNumber *isRegularFile;
+        UTType *contentType;
+        NSError *error;
+        BOOL readMetadata = [URL getResourceValue:&isDirectory forKey:NSURLIsDirectoryKey error:&error] &&
+            [URL getResourceValue:&isRegularFile forKey:NSURLIsRegularFileKey error:&error] &&
+            [URL getResourceValue:&contentType forKey:NSURLContentTypeKey error:&error];
+        if (isDirectory.boolValue) {
+            [folders addObject:URL.lastPathComponent];
+            continue;
+        }
+        if (!readMetadata || !isRegularFile.boolValue || ![fileManager isReadableFileAtPath:URL.path]) {
+            [unreadable addObject:URL.lastPathComponent];
+            continue;
+        }
+        BOOL supported = NO;
+        for (UTType *type in supportedTypes) {
+            if ([contentType conformsToType:type]) { supported = YES; break; }
+        }
+        if (supported) [accepted addObject:URL.path];
+        else [unsupported addObject:URL.lastPathComponent];
+    }
+}
+
+- (void)presentSkippedImportAlertWithFolders:(NSArray<NSString *> *)folders
+                                 unsupported:(NSArray<NSString *> *)unsupported
+                                  unreadable:(NSArray<NSString *> *)unreadable
+{
+    NSMutableArray<NSString *> *lines = [NSMutableArray array];
+    if (folders.count) [lines addObject:[NSString stringWithFormat:@"Folders: %@", [folders componentsJoinedByString:@", "]]];
+    if (unsupported.count) [lines addObject:[NSString stringWithFormat:@"Unsupported files: %@", [unsupported componentsJoinedByString:@", "]]];
+    if (unreadable.count) [lines addObject:[NSString stringWithFormat:@"Missing or unreadable files: %@", [unreadable componentsJoinedByString:@", "]]];
+    NSAlert *alert = [[NSAlert alloc] init];
+    alert.messageText = @"Some items were not imported";
+    alert.informativeText = [lines componentsJoinedByString:@"\n"];
+    [alert addButtonWithTitle:@"OK"];
+    if (self.imageTable.window) [alert beginSheetModalForWindow:self.imageTable.window completionHandler:nil];
+    else [alert runModal];
 }
 
 /************************************************/
@@ -63,23 +253,31 @@ static NSPasteboardType const ImageRowPasteboardType = @"org.image2movie.row-ind
 
 - (void) moveItemsAtIndexes: (NSIndexSet*)indexes toIndex: (NSUInteger) destinationIndex
 {
-    [self.imagePathArrayController setSortDescriptors: [NSArray array]];
-    NSArray* temp = [[self.imagePathArrayController arrangedObjects] objectsAtIndexes: indexes];
-	
-    NSInteger index;
-    for (index = [indexes lastIndex]; index != NSNotFound; index = [indexes indexLessThanIndex:index]) {
+    if (![self canMutate]) return;
+    NSArray *arranged = [self.imagePathArrayController.arrangedObjects copy];
+    if (!indexes.count || indexes.lastIndex >= arranged.count || destinationIndex > arranged.count) return;
+    NSArray *moved = [arranged objectsAtIndexes:indexes];
+    NSMutableArray *result = [arranged mutableCopy];
+
+    NSUInteger index;
+    for (index = indexes.lastIndex; index != NSNotFound; index = [indexes indexLessThanIndex:index]) {
         if (index < destinationIndex)
 			destinationIndex --;
     }
-    
-    [self.imagePathArrayController removeObjectsAtArrangedObjectIndexes: indexes];
-    [self.imagePathArrayController insertObjects: temp atArrangedObjectIndexes: [NSIndexSet indexSetWithIndexesInRange: NSMakeRange( destinationIndex, [temp count])]];
-    
-    [self.imagePathArrayController setSelectionIndexes: [NSIndexSet indexSetWithIndexesInRange: NSMakeRange( destinationIndex, [temp count])]];
+    [result removeObjectsAtIndexes:indexes];
+    NSIndexSet *insertIndexes = [NSIndexSet indexSetWithIndexesInRange:NSMakeRange(destinationIndex, moved.count)];
+    [result insertObjects:moved atIndexes:insertIndexes];
+    if ([result isEqual:self.imagesToMovie.imagePaths] && self.imagePathArrayController.sortDescriptors.count == 0) {
+        self.imagePathArrayController.selectionIndexes = insertIndexes;
+        [self.imageTable selectRowIndexes:insertIndexes byExtendingSelection:NO];
+        return;
+    }
+    [self replacePaths:result sortDescriptors:@[] selectionIndexes:insertIndexes actionName:@"Reorder Images"];
 }
 
 - (id<NSPasteboardWriting>)tableView:(NSTableView *)tableView pasteboardWriterForRow:(NSInteger)row
 {
+    if (![self canMutate]) return nil;
     if (row < 0 || row >= [self.imagePathArrayController.arrangedObjects count]) return nil;
     NSPasteboardItem *item = [[NSPasteboardItem alloc] init];
     [item setPropertyList:@(row) forType:ImageRowPasteboardType];
@@ -88,21 +286,24 @@ static NSPasteboardType const ImageRowPasteboardType = @"org.image2movie.row-ind
 
 - (NSDragOperation) tableView: (NSTableView*) aTableView validateDrop: (id <NSDraggingInfo>)info proposedRow: (NSInteger) row proposedDropOperation: (NSTableViewDropOperation) operation
 {
+    if (![self canMutate]) return NSDragOperationNone;
     if ([info draggingSource] == self.imageTable) {
+        if (operation != NSTableViewDropAbove || row < 0 || row > (NSInteger)[self.imagePathArrayController.arrangedObjects count])
+            return NSDragOperationNone;
         [aTableView setDropRow: row dropOperation:NSTableViewDropAbove];
         return NSDragOperationMove;
     }
-    else /* if ([[PrimaryViewAndToolbarController sharedPrimaryViewAndToolbarController] validateFilesAtPaths: [[info draggingPasteboard] propertyListForType: NSFilenamesPboardType]]) */
-	{
+    else if ([info.draggingPasteboard canReadObjectForClasses:@[NSURL.class]
+        options:@{NSPasteboardURLReadingFileURLsOnlyKey:@YES}]) {
         [aTableView setDropRow: [[self.imagePathArrayController arrangedObjects] count] dropOperation:NSTableViewDropAbove];
         return NSDragOperationCopy;
     }
-	
     return NSDragOperationNone;
 }
 
 - (BOOL) tableView: (NSTableView *) aTableView acceptDrop: (id <NSDraggingInfo>)info row: (NSInteger) row dropOperation: (NSTableViewDropOperation) operation
 {
+    if (![self canMutate]) return NO;
     if ([info draggingSource] == self.imageTable) {
         NSUInteger count = [self.imagePathArrayController.arrangedObjects count];
         if (row < 0 || row > count) return NO;
@@ -117,12 +318,10 @@ static NSPasteboardType const ImageRowPasteboardType = @"org.image2movie.row-ind
         return YES;
     }
     else {
-        [self.imagePathArrayController addObjects: [[info draggingPasteboard] propertyListForType: NSFilenamesPboardType]];
-        
-        return YES;
+        NSArray<NSURL *> *URLs = [info.draggingPasteboard readObjectsForClasses:@[NSURL.class]
+            options:@{NSPasteboardURLReadingFileURLsOnlyKey:@YES}];
+        return [self importImageURLs:URLs];
     }
-    
-    return NO;
 }
 
 

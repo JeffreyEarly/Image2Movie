@@ -14,22 +14,25 @@
 		814F4A5514632B0200CA0F3B /* ImagesToMovieController.m in Sources */ = {isa = PBXBuildFile; fileRef = 814F4A5414632B0200CA0F3B /* ImagesToMovieController.m */; };
 		814F4A5B14633C8C00CA0F3B /* ImageTableController.m in Sources */ = {isa = PBXBuildFile; fileRef = 814F4A5A14633C8C00CA0F3B /* ImageTableController.m */; };
 		8151904B1187766300808105 /* AppController.m in Sources */ = {isa = PBXBuildFile; fileRef = 8151904A1187766300808105 /* AppController.m */; };
-		81C95AF31710D09E004D1D34 /* Implementation Notes in Resources */ = {isa = PBXBuildFile; fileRef = 81C95AF21710D09E004D1D34 /* Implementation Notes */; };
 		81C95AF51710E141004D1D34 /* AVFoundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 81C95AF41710E141004D1D34 /* AVFoundation.framework */; };
 		81C95AF71710E14F004D1D34 /* CoreVideo.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 81C95AF61710E14F004D1D34 /* CoreVideo.framework */; };
 		81C95AF91710E15B004D1D34 /* CoreMedia.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 81C95AF81710E15B004D1D34 /* CoreMedia.framework */; };
-		8D11072A0486CEB800E47090 /* MainMenu.nib in Resources */ = {isa = PBXBuildFile; fileRef = 29B97318FDCFA39411CA2CEA /* MainMenu.nib */; };
+		81C95AFB1710E15B004D1D34 /* UniformTypeIdentifiers.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 81C95AFA1710E15B004D1D34 /* UniformTypeIdentifiers.framework */; };
+		8D11072A0486CEB800E47090 /* MainMenu.xib in Resources */ = {isa = PBXBuildFile; fileRef = 29B97318FDCFA39411CA2CEA /* MainMenu.xib */; };
 		8D11072B0486CEB800E47090 /* InfoPlist.strings in Resources */ = {isa = PBXBuildFile; fileRef = 089C165CFE840E0CC02AAC07 /* InfoPlist.strings */; };
 		8D11072D0486CEB800E47090 /* main.m in Sources */ = {isa = PBXBuildFile; fileRef = 29B97316FDCFA39411CA2CEA /* main.m */; settings = {ATTRIBUTES = (); }; };
 		8D11072F0486CEB800E47090 /* Cocoa.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 1058C7A1FEA54F0111CA2CBB /* Cocoa.framework */; };
+		A02700000000000000000011 /* CoreImage.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A02700000000000000000001 /* CoreImage.framework */; };
+		A02700000000000000000012 /* ImageIO.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A02700000000000000000002 /* ImageIO.framework */; };
+		A02700000000000000000013 /* VideoToolbox.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A02700000000000000000003 /* VideoToolbox.framework */; };
+		A02700000000000000000014 /* MovieFrameRenderer.m in Sources */ = {isa = PBXBuildFile; fileRef = A02700000000000000000004 /* MovieFrameRenderer.m */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
 		089C165DFE840E0CC02AAC07 /* English */ = {isa = PBXFileReference; fileEncoding = 10; lastKnownFileType = text.plist.strings; name = English; path = English.lproj/InfoPlist.strings; sourceTree = "<group>"; };
 		1058C7A1FEA54F0111CA2CBB /* Cocoa.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Cocoa.framework; path = /System/Library/Frameworks/Cocoa.framework; sourceTree = "<absolute>"; };
-		13E42FB307B3F0F600E4EEF1 /* CoreData.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreData.framework; path = /System/Library/Frameworks/CoreData.framework; sourceTree = "<absolute>"; };
 		29B97316FDCFA39411CA2CEA /* main.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = main.m; sourceTree = "<group>"; };
-		29B97319FDCFA39411CA2CEA /* English */ = {isa = PBXFileReference; lastKnownFileType = wrapper.nib; name = English; path = English.lproj/MainMenu.nib; sourceTree = "<group>"; };
+		29B97319FDCFA39411CA2CEA /* English */ = {isa = PBXFileReference; lastKnownFileType = file.xib; name = English; path = English.lproj/MainMenu.xib; sourceTree = "<group>"; };
 		29B97324FDCFA39411CA2CEA /* AppKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AppKit.framework; path = /System/Library/Frameworks/AppKit.framework; sourceTree = "<absolute>"; };
 		29B97325FDCFA39411CA2CEA /* Foundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Foundation.framework; path = /System/Library/Frameworks/Foundation.framework; sourceTree = "<absolute>"; };
 		32CA4F630368D1EE00C91783 /* Image2Movie_Prefix.pch */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Image2Movie_Prefix.pch; sourceTree = "<group>"; };
@@ -45,16 +48,18 @@
 		814F4A5A14633C8C00CA0F3B /* ImageTableController.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = ImageTableController.m; sourceTree = "<group>"; };
 		815190491187766300808105 /* AppController.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = AppController.h; sourceTree = "<group>"; };
 		8151904A1187766300808105 /* AppController.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = AppController.m; sourceTree = "<group>"; };
-		8151905311877C3E00808105 /* AddMovieFrameOperation.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = AddMovieFrameOperation.h; sourceTree = "<group>"; };
-		8151905411877C3E00808105 /* AddMovieFrameOperation.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = AddMovieFrameOperation.m; sourceTree = "<group>"; };
-		8197A64915D03E99007980B2 /* ResizeImageOperation.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ResizeImageOperation.h; sourceTree = "<group>"; };
-		8197A64A15D03E99007980B2 /* ResizeImageOperation.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = ResizeImageOperation.m; sourceTree = "<group>"; };
 		81C95AF21710D09E004D1D34 /* Implementation Notes */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = "Implementation Notes"; sourceTree = "<group>"; };
 		81C95AF41710E141004D1D34 /* AVFoundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AVFoundation.framework; path = System/Library/Frameworks/AVFoundation.framework; sourceTree = SDKROOT; };
 		81C95AF61710E14F004D1D34 /* CoreVideo.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreVideo.framework; path = System/Library/Frameworks/CoreVideo.framework; sourceTree = SDKROOT; };
 		81C95AF81710E15B004D1D34 /* CoreMedia.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreMedia.framework; path = System/Library/Frameworks/CoreMedia.framework; sourceTree = SDKROOT; };
+		81C95AFA1710E15B004D1D34 /* UniformTypeIdentifiers.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = UniformTypeIdentifiers.framework; path = System/Library/Frameworks/UniformTypeIdentifiers.framework; sourceTree = SDKROOT; };
 		8D1107310486CEB800E47090 /* Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		8D1107320486CEB800E47090 /* Image2Movie.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Image2Movie.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		A02700000000000000000001 /* CoreImage.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreImage.framework; path = System/Library/Frameworks/CoreImage.framework; sourceTree = SDKROOT; };
+		A02700000000000000000002 /* ImageIO.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = ImageIO.framework; path = System/Library/Frameworks/ImageIO.framework; sourceTree = SDKROOT; };
+		A02700000000000000000003 /* VideoToolbox.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = VideoToolbox.framework; path = System/Library/Frameworks/VideoToolbox.framework; sourceTree = SDKROOT; };
+		A02700000000000000000004 /* MovieFrameRenderer.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = MovieFrameRenderer.m; sourceTree = "<group>"; };
+		A02700000000000000000005 /* MovieFrameRenderer.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = MovieFrameRenderer.h; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -62,6 +67,10 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				A02700000000000000000011 /* CoreImage.framework in Frameworks */,
+				A02700000000000000000012 /* ImageIO.framework in Frameworks */,
+				A02700000000000000000013 /* VideoToolbox.framework in Frameworks */,
+				81C95AFB1710E15B004D1D34 /* UniformTypeIdentifiers.framework in Frameworks */,
 				81C95AF91710E15B004D1D34 /* CoreMedia.framework in Frameworks */,
 				81C95AF71710E14F004D1D34 /* CoreVideo.framework in Frameworks */,
 				81C95AF51710E141004D1D34 /* AVFoundation.framework in Frameworks */,
@@ -88,6 +97,9 @@
 		1058C7A0FEA54F0111CA2CBB /* Linked Frameworks */ = {
 			isa = PBXGroup;
 			children = (
+				A02700000000000000000001 /* CoreImage.framework */,
+				A02700000000000000000002 /* ImageIO.framework */,
+				A02700000000000000000003 /* VideoToolbox.framework */,
 				1058C7A1FEA54F0111CA2CBB /* Cocoa.framework */,
 			);
 			name = "Linked Frameworks";
@@ -97,7 +109,6 @@
 			isa = PBXGroup;
 			children = (
 				29B97324FDCFA39411CA2CEA /* AppKit.framework */,
-				13E42FB307B3F0F600E4EEF1 /* CoreData.framework */,
 				29B97325FDCFA39411CA2CEA /* Foundation.framework */,
 			);
 			name = "Other Frameworks";
@@ -114,6 +125,7 @@
 		29B97314FDCFA39411CA2CEA /* Image2Movie */ = {
 			isa = PBXGroup;
 			children = (
+				81C95AFA1710E15B004D1D34 /* UniformTypeIdentifiers.framework */,
 				81C95AF81710E15B004D1D34 /* CoreMedia.framework */,
 				81C95AF61710E14F004D1D34 /* CoreVideo.framework */,
 				81C95AF41710E141004D1D34 /* AVFoundation.framework */,
@@ -140,7 +152,7 @@
 			children = (
 				8D1107310486CEB800E47090 /* Info.plist */,
 				089C165CFE840E0CC02AAC07 /* InfoPlist.strings */,
-				29B97318FDCFA39411CA2CEA /* MainMenu.nib */,
+				29B97318FDCFA39411CA2CEA /* MainMenu.xib */,
 			);
 			name = Resources;
 			sourceTree = "<group>";
@@ -154,21 +166,11 @@
 			name = Frameworks;
 			sourceTree = "<group>";
 		};
-		8129016517188DA90024DED8 /* Old - Unused */ = {
-			isa = PBXGroup;
-			children = (
-				8197A64915D03E99007980B2 /* ResizeImageOperation.h */,
-				8197A64A15D03E99007980B2 /* ResizeImageOperation.m */,
-				8151905311877C3E00808105 /* AddMovieFrameOperation.h */,
-				8151905411877C3E00808105 /* AddMovieFrameOperation.m */,
-			);
-			name = "Old - Unused";
-			sourceTree = "<group>";
-		};
 		81B18A571463414B000672EE /* Model */ = {
 			isa = PBXGroup;
 			children = (
-				8129016517188DA90024DED8 /* Old - Unused */,
+				A02700000000000000000004 /* MovieFrameRenderer.m */,
+				A02700000000000000000005 /* MovieFrameRenderer.h */,
 				814F4A4C146319E100CA0F3B /* ImagesToMovie.h */,
 				814F4A4D146319E100CA0F3B /* ImagesToMovie.m */,
 			);
@@ -245,10 +247,9 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				8D11072A0486CEB800E47090 /* MainMenu.nib in Resources */,
+				8D11072A0486CEB800E47090 /* MainMenu.xib in Resources */,
 				8D11072B0486CEB800E47090 /* InfoPlist.strings in Resources */,
 				814F4A451463070000CA0F3B /* PrimaryWindow.xib in Resources */,
-				81C95AF31710D09E004D1D34 /* Implementation Notes in Resources */,
 				8129016417188C700024DED8 /* Image2MovieIcon.iconset in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -263,6 +264,7 @@
 				8D11072D0486CEB800E47090 /* main.m in Sources */,
 				8151904B1187766300808105 /* AppController.m in Sources */,
 				814F4A43146306EB00CA0F3B /* PrimaryWindowController.m in Sources */,
+				A02700000000000000000014 /* MovieFrameRenderer.m in Sources */,
 				814F4A4E146319E200CA0F3B /* ImagesToMovie.m in Sources */,
 				814F4A5514632B0200CA0F3B /* ImagesToMovieController.m in Sources */,
 				814F4A5B14633C8C00CA0F3B /* ImageTableController.m in Sources */,
@@ -280,12 +282,12 @@
 			name = InfoPlist.strings;
 			sourceTree = "<group>";
 		};
-		29B97318FDCFA39411CA2CEA /* MainMenu.nib */ = {
+		29B97318FDCFA39411CA2CEA /* MainMenu.xib */ = {
 			isa = PBXVariantGroup;
 			children = (
 				29B97319FDCFA39411CA2CEA /* English */,
 			);
-			name = MainMenu.nib;
+			name = MainMenu.xib;
 			sourceTree = "<group>";
 		};
 /* End PBXVariantGroup section */
@@ -294,50 +296,48 @@
 		C01FCF4B08A954540054247B /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ARCHS = arm64;
 				CLANG_ENABLE_OBJC_ARC = YES;
 				COMBINE_HIDPI_IMAGES = YES;
 				COPY_PHASE_STRIP = NO;
 				GCC_DYNAMIC_NO_PIC = NO;
-				GCC_MODEL_TUNING = G5;
 				GCC_OPTIMIZATION_LEVEL = 0;
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				GCC_PREFIX_HEADER = Image2Movie_Prefix.pch;
 				INFOPLIST_FILE = Info.plist;
 				INSTALL_PATH = "$(HOME)/Applications";
-				MACOSX_DEPLOYMENT_TARGET = 12.0;
+				MACOSX_DEPLOYMENT_TARGET = 27.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.EarlyInnovations.Image2Movie;
 				PRODUCT_NAME = Image2Movie;
-				SDKROOT = "";
 				WRAPPER_EXTENSION = app;
-				ZERO_LINK = YES;
-				ffa = unsupported;
 			};
 			name = Debug;
 		};
 		C01FCF4C08A954540054247B /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ARCHS = arm64;
 				CLANG_ENABLE_OBJC_ARC = YES;
 				COMBINE_HIDPI_IMAGES = YES;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
-				GCC_MODEL_TUNING = G5;
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				GCC_PREFIX_HEADER = Image2Movie_Prefix.pch;
-				GCC_VERSION = "";
 				INFOPLIST_FILE = Info.plist;
 				INSTALL_PATH = "$(HOME)/Applications";
-				MACOSX_DEPLOYMENT_TARGET = 12.0;
+				MACOSX_DEPLOYMENT_TARGET = 27.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.EarlyInnovations.Image2Movie;
 				PRODUCT_NAME = Image2Movie;
-				SDKROOT = "";
 				WRAPPER_EXTENSION = app;
-				ffa = "";
 			};
 			name = Release;
 		};
 		C01FCF4F08A954540054247B /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ARCHS = arm64;
 				CLANG_ENABLE_OBJC_ARC = YES;
 				ENABLE_TESTABILITY = YES;
 				GCC_WARN_ABOUT_RETURN_TYPE = YES;
@@ -350,6 +350,8 @@
 		C01FCF5008A954540054247B /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ARCHS = arm64;
 				CLANG_ENABLE_OBJC_ARC = YES;
 				GCC_WARN_ABOUT_RETURN_TYPE = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;

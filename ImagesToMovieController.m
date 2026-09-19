@@ -8,42 +8,27 @@
 
 #import "ImagesToMovieController.h"
 #import "ImagesToMovie.h"
+#import "MovieFrameRenderer.h"
 #import <math.h>
 
-static NSString * ImagePathObservationContext = @"ImagePathObservationContext";
-static NSString * SelectedProfileObservationContext = @"SelectedProfileObservationContext";
-
+static char ImagePathObservationContext;
 static BOOL ValidImageSize(NSSize size)
 {
     return isfinite(size.width) && isfinite(size.height) && size.width > 0 && size.height > 0 &&
         floor(size.width) == size.width && floor(size.height) == size.height;
 }
-
-static NSSize ImagePixelSize(NSImage *image)
+static NSInteger ValidIntegerPreference(NSString *key, NSInteger minimum, NSInteger maximum, NSInteger fallback)
 {
-    if (!image.isValid) return NSZeroSize;
-
-    NSSize pixelSize = NSZeroSize;
-    BOOL hasBitmap = NO;
-    for (NSImageRep *representation in image.representations) {
-        if ([representation isKindOfClass:[NSBitmapImageRep class]]) {
-            hasBitmap = YES;
-            NSBitmapImageRep *bitmap = (NSBitmapImageRep *)representation;
-            NSSize size = NSMakeSize(bitmap.pixelsWide, bitmap.pixelsHigh);
-            if (ValidImageSize(size) && bitmap.CGImage &&
-                size.width * size.height > pixelSize.width * pixelSize.height) {
-                pixelSize = size;
-            }
-        }
-    }
-    // Vector images have no fixed raster size; use their natural size in pixels.
-    return hasBitmap ? pixelSize : NSMakeSize(round(image.size.width), round(image.size.height));
+    id value = [[NSUserDefaults standardUserDefaults] objectForKey:key];
+    if (![value isKindOfClass:[NSNumber class]]) return fallback;
+    double number = [value doubleValue];
+    return isfinite(number) && floor(number) == number && number >= minimum && number <= maximum ?
+        (NSInteger)number : fallback;
 }
 
 @interface ImagesToMovieController ()
 @property NSUInteger firstFrameLoadGeneration;
-@property BOOL updatingProfiles;
-@property BOOL observingProfileSelection;
+@property NSInteger lastAutomaticQualityTag;
 @end
 
 @implementation ImagesToMovieController
@@ -52,37 +37,31 @@ static NSSize ImagePixelSize(NSImage *image)
 {
     if (self != [ImagesToMovieController class]) return;
     [[NSUserDefaults standardUserDefaults] registerDefaults:@{
-        @"customMovieWidth": @1280, @"customMovieHeight": @720,
-        @"defaultSizePreset": @0, @"defaultFrameRate": @30
+        @"customMovieWidth": @1280, @"customMovieHeight": @720, @"defaultSizePreset": @0,
+        @"defaultCodecTag": @1, @"defaultQualityTag": @(MovieQualityHigh), @"defaultFrameRate": @30
     }];
 }
 
-- (id)init
+- (instancetype)init
 {
     if ((self = [super init])) {
-        _frameRate = [[[NSUserDefaults standardUserDefaults] objectForKey:@"defaultFrameRate"] unsignedIntegerValue];
-        self.validProfilesSelectedIndices = [NSMutableIndexSet indexSet];
-        self.selectedSizePresetsTag = [[[NSUserDefaults standardUserDefaults] objectForKey:@"defaultSizePreset"] integerValue];
+        _selectedCodecTag = ValidIntegerPreference(@"defaultCodecTag", 0, 2, 1);
+        _selectedQualityTag = ValidIntegerPreference(@"defaultQualityTag", 0, 1, 1);
+        _lastAutomaticQualityTag = _selectedQualityTag;
+        _frameRate = ValidIntegerPreference(@"defaultFrameRate", 1, 30, 30);
+        _bitRate = 20.0;
+        NSInteger sizeTag = ValidIntegerPreference(@"defaultSizePreset", 0, 2160, 0);
+        if (sizeTag != 0 && sizeTag != 1 && sizeTag != 480 && sizeTag != 720 && sizeTag != 1080 && sizeTag != 2160) sizeTag = 0;
+        self.selectedSizePresetsTag = sizeTag;
     }
     return self;
 }
 
-- (void)awakeFromNib
-{
-    [self.profileDictionaryController addObserver:self forKeyPath:@"selectedObjects" options:0 context:&SelectedProfileObservationContext];
-    self.observingProfileSelection = YES;
-    [self frameRateOrSizeDidChange];
-}
-
-- (void)dealloc
-{
-    [imagesToMovie removeObserver:self forKeyPath:@"imagePaths"];
-    if (self.observingProfileSelection) {
-        [self.profileDictionaryController removeObserver:self forKeyPath:@"selectedObjects"];
-    }
-}
+- (void)awakeFromNib { [self frameRateOrSizeDidChange]; }
+- (void)dealloc { [imagesToMovie removeObserver:self forKeyPath:@"imagePaths"]; }
 
 @synthesize imagesToMovie;
+@synthesize selectedSizePresetsTag;
 
 - (void)setImagesToMovie:(ImagesToMovie *)model
 {
@@ -96,21 +75,15 @@ static NSSize ImagePixelSize(NSImage *image)
 - (void)loadFirstFrame
 {
     NSString *path = [self.imagesToMovie.imagePaths.firstObject copy];
-    if (path && [path isEqualToString:self.firstFramePath]) {
-        [self updateReadiness];
-        return;
-    }
-
+    if (path && [path isEqualToString:self.firstFramePath]) { [self updateReadiness]; return; }
     NSUInteger generation = ++self.firstFrameLoadGeneration;
     self.firstFramePath = path;
     self.firstFrameSize = NSZeroSize;
     [self updateOriginalSizeFields];
     [self frameRateOrSizeDidChange];
     if (!path) return;
-
-    ImagesToMovie *model = self.imagesToMovie;
     dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
-        NSSize size = ImagePixelSize([model imageAtPath:path error:NULL]);
+        NSSize size = [MovieFrameRenderer imageSizeAtPath:path error:NULL];
         dispatch_async(dispatch_get_main_queue(), ^{
             if (generation != self.firstFrameLoadGeneration) return;
             self.firstFrameSize = size;
@@ -125,24 +98,15 @@ static NSSize ImagePixelSize(NSImage *image)
     if (self.selectedSizePresetsTag != 0) return;
     [self willChangeValueForKey:@"width"];
     [self willChangeValueForKey:@"height"];
-    _width = @(self.firstFrameSize.width);
-    _height = @(self.firstFrameSize.height);
+    _width = @(self.firstFrameSize.width); _height = @(self.firstFrameSize.height);
     [self didChangeValueForKey:@"height"];
     [self didChangeValueForKey:@"width"];
 }
 
 - (void)observeValueForKeyPath:(NSString *)keyPath ofObject:(id)object change:(NSDictionary *)change context:(void *)context
 {
-    if (context == &ImagePathObservationContext) {
-        [self loadFirstFrame];
-    } else if (context == &SelectedProfileObservationContext) {
-        if (!self.updatingProfiles) {
-            NSDictionaryControllerKeyValuePair *selectedProfile = self.profileDictionaryController.selectedObjects.firstObject;
-            self.profile = selectedProfile.key;
-        }
-    } else {
-        [super observeValueForKeyPath:keyPath ofObject:object change:change context:context];
-    }
+    if (context == &ImagePathObservationContext) [self loadFirstFrame];
+    else [super observeValueForKeyPath:keyPath ofObject:object change:change context:context];
 }
 
 - (NSSize)targetSize
@@ -150,24 +114,24 @@ static NSSize ImagePixelSize(NSImage *image)
     if (!ValidImageSize(self.firstFrameSize)) return NSZeroSize;
     NSSize limit = NSMakeSize(self.width.doubleValue, self.height.doubleValue);
     if (!ValidImageSize(limit)) return NSZeroSize;
-    return self.selectedSizePresetsTag == 0 ? self.firstFrameSize :
-        [self.imagesToMovie resizeOriginal:self.firstFrameSize intoTargetSize:limit withTolerance:NO];
+    return self.selectedSizePresetsTag == 0 ? self.firstFrameSize : [self.imagesToMovie resizeOriginal:self.firstFrameSize intoTargetSize:limit withTolerance:NO];
 }
 
 - (void)updateReadiness
 {
-    NSSize targetSize = [self targetSize];
+    NSSize target = [self targetSize];
+    BOOL validRate = isfinite(self.bitRate) && self.bitRate >= 0.1 && self.bitRate <= 50.0;
     self.readyToCreateMovie = self.imagesToMovie.imagePaths.count > 0 &&
         [self.firstFramePath isEqualToString:self.imagesToMovie.imagePaths.firstObject] &&
-        ValidImageSize(targetSize) && targetSize.width <= 3840 && targetSize.height <= 2160 &&
+        ValidImageSize(target) && target.width <= 3840 && target.height <= 2160 &&
         self.frameRate >= 1 && self.frameRate <= 30 && self.codec != nil &&
-        (!self.usesH264Profile || (self.profile != nil && self.validProfiles[self.profile] != nil)) &&
-        (!self.usesBitRate || (isfinite(self.bitRate) && self.bitRate >= 0.000001 && self.bitRate <= self.maxBitRate));
+        (!self.qualityControlsVisible || self.selectedQualityTag != MovieQualityCustomBitrate || validRate);
 }
 
 + (NSSet *)keyPathsForValuesAffectingCodec { return [NSSet setWithObject:@"selectedCodecTag"]; }
-+ (NSSet *)keyPathsForValuesAffectingUsesH264Profile { return [NSSet setWithObject:@"selectedCodecTag"]; }
-+ (NSSet *)keyPathsForValuesAffectingUsesBitRate { return [NSSet setWithObject:@"selectedCodecTag"]; }
++ (NSSet *)keyPathsForValuesAffectingQualityControlsVisible { return [NSSet setWithObject:@"selectedCodecTag"]; }
++ (NSSet *)keyPathsForValuesAffectingAutomaticBitRateVisible { return [NSSet setWithObjects:@"selectedCodecTag", @"selectedQualityTag", nil]; }
++ (NSSet *)keyPathsForValuesAffectingCustomBitRateEnabled { return [NSSet setWithObjects:@"selectedCodecTag", @"selectedQualityTag", nil]; }
 
 - (NSString *)codec
 {
@@ -179,96 +143,42 @@ static NSSize ImagePixelSize(NSImage *image)
     }
 }
 
-- (BOOL)usesH264Profile { return self.selectedCodecTag == 0; }
-- (BOOL)usesBitRate { return self.selectedCodecTag == 0 || self.selectedCodecTag == 1; }
+- (BOOL)qualityControlsVisible { return self.selectedCodecTag != 2; }
+- (BOOL)automaticBitRateVisible { return self.qualityControlsVisible && self.selectedQualityTag != MovieQualityCustomBitrate; }
+- (BOOL)customBitRateEnabled { return self.qualityControlsVisible && self.selectedQualityTag == MovieQualityCustomBitrate; }
 
 - (void)setSelectedCodecTag:(NSInteger)tag
 {
     if (_selectedCodecTag == tag) return;
     _selectedCodecTag = tag;
+    if (tag >= 0 && tag <= 2) [[NSUserDefaults standardUserDefaults] setObject:@(tag) forKey:@"defaultCodecTag"];
+    if (_selectedQualityTag == MovieQualityCustomBitrate) self.selectedQualityTag = self.lastAutomaticQualityTag;
     [self frameRateOrSizeDidChange];
 }
 
-// Reconsider compression defaults when dimensions, frame rate, or codec change.
-- (void)frameRateOrSizeDidChange
+- (void)setSelectedQualityTag:(NSInteger)tag
 {
-    NSSize targetSize = [self targetSize];
-    NSMutableDictionary *profiles = [NSMutableDictionary dictionary];
-    NSArray *profileOrder = @[AVVideoProfileLevelH264Main30, AVVideoProfileLevelH264Main31,
-        AVVideoProfileLevelH264Main32, AVVideoProfileLevelH264Main41, AVVideoProfileLevelH264MainAutoLevel];
-    if (ValidImageSize(targetSize) && targetSize.width <= 3840 && targetSize.height <= 2160 &&
-        self.frameRate >= 1 && self.frameRate <= 30) {
-        double pixels = targetSize.width * targetSize.height;
-        for (NSString *key in profileOrder) {
-            NSDictionary *codec = self.imagesToMovie.codecProfiles[key];
-            if (pixels <= [codec[ProfileMaxPixelsKey] doubleValue] &&
-                pixels * self.frameRate <= [codec[ProfileMaxPixelsPerSecondKey] doubleValue]) {
-                profiles[key] = codec[ProfileNameKey];
-            }
-        }
+    if (tag < MovieQualityStandard || tag > MovieQualityCustomBitrate) tag = MovieQualityHigh;
+    if (_selectedQualityTag == tag) { [self updateReadiness]; return; }
+    _selectedQualityTag = tag;
+    if (tag == MovieQualityStandard || tag == MovieQualityHigh) {
+        self.lastAutomaticQualityTag = tag;
+        [[NSUserDefaults standardUserDefaults] setObject:@(tag) forKey:@"defaultQualityTag"];
     }
-
-    NSString *preferredProfile = nil;
-    switch (self.selectedSizePresetsTag) {
-        case 480: preferredProfile = AVVideoProfileLevelH264Main30; break;
-        case 720: preferredProfile = AVVideoProfileLevelH264Main31; break;
-        case 1080: preferredProfile = AVVideoProfileLevelH264Main41; break;
-        case 2160: preferredProfile = AVVideoProfileLevelH264MainAutoLevel; break;
-    }
-    if (!preferredProfile || !profiles[preferredProfile]) {
-        preferredProfile = nil;
-        for (NSString *key in profileOrder) {
-            if (profiles[key]) { preferredProfile = key; break; }
-        }
-    }
-
-    self.updatingProfiles = YES;
-    self.validProfiles = self.usesH264Profile ? profiles : @{};
-    [self.profileDictionaryController rearrangeObjects];
-    NSArray *selection = @[];
-    for (NSDictionaryControllerKeyValuePair *pair in self.profileDictionaryController.arrangedObjects) {
-        if ([pair.key isEqualToString:preferredProfile]) { selection = @[pair]; break; }
-    }
-    self.profileDictionaryController.selectedObjects = selection;
-    self.profile = self.usesH264Profile ? preferredProfile : nil;
-    if (!self.usesH264Profile) {
-        self.maxBitRate = self.usesBitRate ? 50 : 0;
-        self.bitRateNumberFormatter.maximum = @(self.maxBitRate);
-        // HEVC uses the existing size-based bitrate defaults; ProRes is automatic.
-        self.bitRate = self.usesBitRate && preferredProfile ?
-            [self.imagesToMovie.codecProfiles[preferredProfile][ProfileReasonableBitRateKey] doubleValue] / 1.0e6 : 0;
-    }
-    self.updatingProfiles = NO;
     [self updateReadiness];
 }
 
-- (void)setProfile:(NSString *)profile
-{
-    if ((_profile == profile) || [_profile isEqualToString:profile]) return;
-    _profile = [profile copy];
-    NSDictionary *codec = profile ? self.imagesToMovie.codecProfiles[profile] : nil;
-    self.maxBitRate = [codec[ProfileMaxBitRateKey] doubleValue] / 1.0e6;
-    self.bitRateNumberFormatter.maximum = @(self.maxBitRate);
-    self.bitRate = [codec[ProfileReasonableBitRateKey] doubleValue] / 1.0e6;
-}
-
-- (void)setBitRate:(CGFloat)bitRate
-{
-    _bitRate = bitRate;
-    [self updateReadiness];
-}
+- (void)frameRateOrSizeDidChange { [self updateReadiness]; }
 
 - (void)updateModelWithNewSettings
 {
     self.imagesToMovie.codec = self.codec;
     self.imagesToMovie.frameSize = [self targetSize];
     self.imagesToMovie.frameRate = self.frameRate;
-    self.imagesToMovie.averageBitRate = self.usesBitRate && isfinite(self.bitRate) && self.bitRate > 0 && self.bitRate <= 50 ?
-        (NSUInteger)(self.bitRate * 1.0e6) : 0;
-    self.imagesToMovie.profile = self.profile;
+    self.imagesToMovie.qualityMode = (MovieQualityMode)self.selectedQualityTag;
+    if (self.selectedQualityTag == MovieQualityCustomBitrate && isfinite(self.bitRate))
+        self.imagesToMovie.averageBitRate = (NSUInteger)llround(self.bitRate * 1000000.0);
 }
-
-@synthesize selectedSizePresetsTag;
 
 - (void)setSelectedSizePresetsTag:(NSInteger)tag
 {
@@ -276,20 +186,12 @@ static NSSize ImagePixelSize(NSImage *image)
     selectedSizePresetsTag = tag;
     [self willChangeValueForKey:@"width"];
     [self willChangeValueForKey:@"height"];
-    if (tag == 0) {
-        _width = @(self.firstFrameSize.width); _height = @(self.firstFrameSize.height);
-    } else if (tag == 480) {
-        _width = @640; _height = @480;
-    } else if (tag == 720) {
-        _width = @1280; _height = @720;
-    } else if (tag == 1080) {
-        _width = @1920; _height = @1080;
-    } else if (tag == 2160) {
-        _width = @3840; _height = @2160;
-    } else {
-        _width = [[NSUserDefaults standardUserDefaults] objectForKey:@"customMovieWidth"];
-        _height = [[NSUserDefaults standardUserDefaults] objectForKey:@"customMovieHeight"];
-    }
+    if (tag == 0) { _width = @(self.firstFrameSize.width); _height = @(self.firstFrameSize.height); }
+    else if (tag == 480) { _width = @640; _height = @480; }
+    else if (tag == 720) { _width = @1280; _height = @720; }
+    else if (tag == 1080) { _width = @1920; _height = @1080; }
+    else if (tag == 2160) { _width = @3840; _height = @2160; }
+    else { _width = [[NSUserDefaults standardUserDefaults] objectForKey:@"customMovieWidth"]; _height = [[NSUserDefaults standardUserDefaults] objectForKey:@"customMovieHeight"]; }
     [self didChangeValueForKey:@"height"];
     [self didChangeValueForKey:@"width"];
     self.customFieldsAreEnabled = tag == 1;
@@ -297,29 +199,37 @@ static NSSize ImagePixelSize(NSImage *image)
     [[NSUserDefaults standardUserDefaults] setObject:@(tag) forKey:@"defaultSizePreset"];
 }
 
-- (void)setWidth:(NSNumber *)width
+- (void)setWidth:(NSNumber *)value
 {
-    width = width ?: @0;
-    if ([_width isEqualToNumber:width]) return;
-    _width = width;
-    [[NSUserDefaults standardUserDefaults] setObject:_width forKey:@"customMovieWidth"];
-    [self frameRateOrSizeDidChange];
+    value = [value isKindOfClass:NSNumber.class] ? value : @0;
+    if ([_width isEqual:value]) return;
+    _width = value;
+    [[NSUserDefaults standardUserDefaults] setObject:value forKey:@"customMovieWidth"];
+    [self updateReadiness];
 }
 
-- (void)setHeight:(NSNumber *)height
+- (void)setHeight:(NSNumber *)value
 {
-    height = height ?: @0;
-    if ([_height isEqualToNumber:height]) return;
-    _height = height;
-    [[NSUserDefaults standardUserDefaults] setObject:_height forKey:@"customMovieHeight"];
-    [self frameRateOrSizeDidChange];
+    value = [value isKindOfClass:NSNumber.class] ? value : @0;
+    if ([_height isEqual:value]) return;
+    _height = value;
+    [[NSUserDefaults standardUserDefaults] setObject:value forKey:@"customMovieHeight"];
+    [self updateReadiness];
 }
 
-- (void)setFrameRate:(NSUInteger)frameRate
+- (void)setFrameRate:(NSUInteger)value
 {
-    if (_frameRate == frameRate) return;
-    _frameRate = frameRate;
-    [self frameRateOrSizeDidChange];
+    if (_frameRate == value) return;
+    _frameRate = value;
+    if (value >= 1 && value <= 30)
+        [[NSUserDefaults standardUserDefaults] setObject:@(value) forKey:@"defaultFrameRate"];
+    [self updateReadiness];
+}
+
+- (void)setBitRate:(CGFloat)value
+{
+    _bitRate = value;
+    [self updateReadiness];
 }
 
 @end

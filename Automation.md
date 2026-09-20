@@ -57,14 +57,14 @@ and wait for temporary-output cleanup.
 4. Choose **Copy Codex Configuration** and add the copied block to your Codex
    configuration. Codex supports command-based STDIO servers in `config.toml`;
    see the [official MCP setup documentation](https://developers.openai.com/codex/mcp).
-5. Restart or reconnect the client, then request an export.
+5. Quit and reopen Codex while Image2Movie stays open, then request an export.
 
 You can also use **Codex → Settings → MCP servers → Add server**. Name it
 `image2movie`, choose **STDIO**, and put the executable path from the copied
 configuration in **Command**. This field takes the actual filesystem path, not
 TOML: omit the surrounding quotes and decode any escaped quotes or backslashes.
-Leave arguments and environment variables empty. Save, then restart the MCP
-connection. No token is needed.
+Leave arguments and environment variables empty. Save, then quit and reopen
+Codex. No token is needed.
 
 For an app installed in `/Applications`, the configuration is:
 

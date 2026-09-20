@@ -73,8 +73,40 @@ The signed proof needs an Early Innovations development identity. Override
   app was running for these checks. The temporary transfer copy currently gives
   the saved file a UUID-based basename.
 - Codex's `image2movie` entry is enabled and points to the correct Release helper.
-  The tools were not available in the already-running Codex turn, so actual Codex
-  tool invocation remains pending. The Python client is not treated as Codex proof.
+  Its initial desktop connection failed during SDK parameter decoding; this was
+  diagnosed and fixed in the follow-up below.
+
+## Codex initialization compatibility (September 20)
+
+The desktop log reported JSON-RPC error `-32603` during initialization. Capturing
+the MCP request from the desktop-bundled Codex client (`0.155.0-alpha.9.2`) in an
+ephemeral diagnostic session established the cause: its valid object-valued
+`experimental.codex/auth-change` capability hits [Swift MCP SDK issue
+#287](https://github.com/modelcontextprotocol/swift-sdk/issues/287). SDK 0.12.1
+incorrectly decodes that map as string values. Omitting it succeeds; including it
+reproduces the desktop error against the signed app.
+
+- The transport now omits unused, valid object-valued experimental capabilities
+  only from `initialize` before passing the request to the SDK. It preserves all
+  other fields and existing request limits. The upstream SDK still handles MCP.
+- Socketpair tests include the captured `2025-06-18` request, its elicitation and
+  extension fields, unknown nested capabilities, empty and legacy maps, and
+  malformed capability rejection. The signed-app client check also uses the
+  current Codex capability shape instead of an empty capability object.
+- Signed Debug/Release builds, static analysis, signature verification, and the
+  complete regression suite pass. An independent GPT-6 Astra review found no
+  production issue; the requested exact-wire-shape test was added.
+- The desktop-bundled Codex MCP client passes six-tool discovery, capabilities,
+  authorized-folder and sequence inspection, a real HEVC export with completion
+  polling, and UHD cancellation with exact destination-byte preservation. These
+  calls used an ephemeral diagnostic app-server session, with no saved task or
+  configuration changes. This verifies the actual Codex client implementation;
+  normal tool use in the existing desktop conversation still needs reconnection
+  after its earlier failed startup.
+
+Image2Movie was rebuilt and relaunched at the configured Release path. Its AI
+opt-in and folder grants remained available. Setup instructions now say to quit
+and reopen Codex, rather than assuming a separate Restart button is present.
 
 ## Earlier signed application checks (September 19)
 

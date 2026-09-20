@@ -133,6 +133,112 @@ private func runFramingRegression() async throws {
     MCPUnixSocket.close(stoppedPeer)
 }
 
+private func rawResponse(from descriptor: Int32) async throws -> [String: Any] {
+    let data = try await Task.detached(priority: .userInitiated) {
+        try MCPUnixSocket.readLine(from: descriptor, limit: 262_144)
+    }.value
+    guard let response = try JSONSerialization.jsonObject(with: data) as? [String: Any] else {
+        throw MCPRegressionError.failed("SDK sent a non-object JSON-RPC response")
+    }
+    return response
+}
+
+private func runInitializeCase(_ label: String, experimental: Any,
+                               expectedMap: [String: String]?, succeeds: Bool,
+                               desktopCodex: Bool = false) async throws {
+    let (serverDescriptor, clientDescriptor) = try socketPair()
+    defer { MCPUnixSocket.close(clientDescriptor) }
+    MCPUnixSocket.configure(clientDescriptor)
+    let transport = MCPUnixSocketTransport(descriptor: serverDescriptor) {}
+    let server = Server(name: "Image2Movie", version: "1.0.0",
+                        capabilities: .init(tools: .init()))
+    await MovieMCPTools.register(on: server, isActive: { transport.isActive })
+    do {
+        try await server.start(transport: transport) { _, capabilities in
+            let knownCapabilityPreserved = desktopCodex
+                ? (capabilities.elicitation?.form != nil && capabilities.elicitation?.url != nil)
+                : (capabilities.roots?.listChanged == true)
+            guard knownCapabilityPreserved,
+                  capabilities.experimental == expectedMap else {
+                throw MCPRegressionError.failed("\(label) initialize lost a supported capability")
+            }
+        }
+        var clientCapabilities: [String: Any] = ["experimental": experimental]
+        if desktopCodex {
+            clientCapabilities["extensions"] = ["openai/form": [String: Any]()]
+            clientCapabilities["elicitation"] = [
+                "form": [String: Any](), "url": [String: Any]()
+            ]
+        } else {
+            clientCapabilities["roots"] = ["listChanged": true]
+        }
+        let request: [String: Any] = [
+            "jsonrpc": "2.0", "id": 1, "method": "initialize",
+            "params": [
+                "protocolVersion": desktopCodex ? "2025-06-18" : "2025-11-25",
+                "clientInfo": desktopCodex
+                    ? ["name": "codex-mcp-client", "title": "Codex",
+                       "version": "0.155.0-alpha.9.2"]
+                    : ["name": "Codex", "version": "test"],
+                "capabilities": clientCapabilities,
+            ],
+        ]
+        var frame = try JSONSerialization.data(withJSONObject: request)
+        frame.append(10)
+        try MCPUnixSocket.writeAll(frame, to: clientDescriptor)
+        let reply = try await rawResponse(from: clientDescriptor)
+        guard reply["id"] as? Int == 1 else {
+            throw MCPRegressionError.failed("\(label) initialize response had the wrong ID")
+        }
+        if succeeds {
+            guard reply["error"] == nil, reply["result"] is [String: Any] else {
+                throw MCPRegressionError.failed("\(label) initialize failed: \(reply)")
+            }
+            try MCPUnixSocket.writeAll(Data(#"{"jsonrpc":"2.0","method":"notifications/initialized"}"#.utf8)
+                                       + Data([10]), to: clientDescriptor)
+            try MCPUnixSocket.writeAll(Data(#"{"jsonrpc":"2.0","id":2,"method":"tools/list"}"#.utf8)
+                                       + Data([10]), to: clientDescriptor)
+            let listed = try await rawResponse(from: clientDescriptor)
+            guard listed["id"] as? Int == 2,
+                  let result = listed["result"] as? [String: Any],
+                  let tools = result["tools"] as? [[String: Any]],
+                  tools.count == 6 else {
+                throw MCPRegressionError.failed("\(label) initialize did not permit tools/list")
+            }
+        } else {
+            guard reply["error"] is [String: Any] else {
+                throw MCPRegressionError.failed("\(label) invalid capability was accepted")
+            }
+        }
+    } catch {
+        await transport.disconnect()
+        await server.stop()
+        throw error
+    }
+    await transport.disconnect()
+    await server.stop()
+}
+
+private func runInitializeCompatibilityRegression() async throws {
+    try await runInitializeCase("Codex object", experimental: [
+        "codex/auth-change": [String: Any]()
+    ], expectedMap: nil, succeeds: true, desktopCodex: true)
+    try await runInitializeCase("unknown nested object", experimental: [
+        "example/feature": ["enabled": true, "options": ["levels": [1, 2]]]
+    ], expectedMap: nil, succeeds: true)
+    try await runInitializeCase("empty map", experimental: [String: Any](),
+                                expectedMap: [:], succeeds: true)
+    try await runInitializeCase("legacy string map", experimental: ["legacy": "supported"],
+                                expectedMap: ["legacy": "supported"], succeeds: true)
+    try await runInitializeCase("scalar map", experimental: 42,
+                                expectedMap: nil, succeeds: false)
+    try await runInitializeCase("scalar entry", experimental: ["probe": true],
+                                expectedMap: nil, succeeds: false)
+    try await runInitializeCase("mixed map", experimental: [
+        "legacy": "supported", "codex/auth-change": [String: Any]()
+    ], expectedMap: nil, succeeds: false)
+}
+
 /// Exercises the official MCP SDK over the newline-delimited socket transport.
 /// Production peer-signature admission is tested separately because socket
 /// pairs have no code identity.
@@ -198,6 +304,7 @@ func runMCPRegression(inDirectory directory: URL) async throws {
         throw MCPRegressionError.failed("MCP fixture directory is missing")
     }
     try await runFramingRegression()
+    try await runInitializeCompatibilityRegression()
     var sessions: [SocketSession] = []
     do {
         sessions.append(try await makeSession())

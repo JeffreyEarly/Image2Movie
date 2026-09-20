@@ -160,6 +160,7 @@ private final class MCPConnectionIO: @unchecked Sendable {
                       let method = json["method"] as? String else {
                     throw MCPUnixSocket.SocketError.protocolMismatch
                 }
+                let sdkLine = try Self.sdkCompatibleInitialize(line, json: json)
                 let requestID = Self.idKey(json["id"])
                 if json["id"] != nil && requestID == nil {
                     throw MCPUnixSocket.SocketError.protocolMismatch
@@ -174,7 +175,7 @@ private final class MCPConnectionIO: @unchecked Sendable {
                     consecutiveNotifications = 0
                     stateLock.withLock { pendingID = requestID }
                 }
-                guard deliver(line) else {
+                guard deliver(sdkLine) else {
                     throw MCPUnixSocket.SocketError.io(ENOBUFS)
                 }
                 if requestID != nil { requestFinished.wait() }
@@ -183,6 +184,32 @@ private final class MCPConnectionIO: @unchecked Sendable {
             }
         }
         close()
+    }
+
+    private static func sdkCompatibleInitialize(_ line: Data,
+                                                json: [String: Any]) throws -> Data {
+        guard json["method"] as? String == "initialize",
+              var params = json["params"] as? [String: Any],
+              var capabilities = params["capabilities"] as? [String: Any],
+              let experimental = capabilities["experimental"] as? [String: Any],
+              !experimental.isEmpty,
+              experimental.values.allSatisfy({ $0 is [String: Any] }) else {
+            return line
+        }
+        // The 2025-11-25 protocol defines object-valued experimental capabilities,
+        // but swift-sdk 0.12.1 decodes them as [String: String] (upstream #287).
+        // This server does not use experimental client capabilities. Remove only a
+        // valid object-valued map until the SDK fixes its decoder.
+        // https://github.com/modelcontextprotocol/swift-sdk/issues/287
+        capabilities.removeValue(forKey: "experimental")
+        params["capabilities"] = capabilities
+        var normalized = json
+        normalized["params"] = params
+        let result = try JSONSerialization.data(withJSONObject: normalized)
+        guard result.count <= maximumInbound else {
+            throw MCPUnixSocket.SocketError.messageTooLarge
+        }
+        return result
     }
 
     private func deliver(_ message: Data) -> Bool {

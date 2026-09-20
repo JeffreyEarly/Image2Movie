@@ -24,7 +24,7 @@ TOOLS = {
     "get_capabilities", "list_authorized_folders", "inspect_sequence",
     "export_movie", "get_export_status", "cancel_export",
 }
-PROTOCOL = "2025-11-25"
+PROTOCOL = "2025-06-18"  # Version requested by the current Codex desktop client.
 
 
 class CheckFailure(Exception):
@@ -115,7 +115,13 @@ class Session:
     def initialize(self):
         result = self.request("initialize", {
             "protocolVersion": PROTOCOL,
-            "capabilities": {},
+            # Current Codex advertises this object-valued extension. Keep it in
+            # the signed-app check: empty capabilities missed SDK issue #287.
+            "capabilities": {
+                "elicitation": {"form": {}, "url": {}},
+                "experimental": {"codex/auth-change": {}},
+                "extensions": {"openai/form": {}},
+            },
             "clientInfo": {"name": "Image2MovieStdioCheck", "version": "1.0"},
         }, timeout=15)
         check("serverInfo" in result, "initialize returned no serverInfo")

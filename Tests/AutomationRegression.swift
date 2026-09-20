@@ -101,6 +101,50 @@ final class AutomationRegression: NSObject {
         try check(draft.imagePaths as? [String] == ["draft-original.png"] &&
                   draft.frameSize == NSSize(width: 640, height: 480) && draft.frameRate == 24 &&
                   draft.codec == .h264, "automation changed the interactive draft")
+
+        let historyStart = coordinator.recentJobs.count
+        var burstIDs: [UUID] = []
+        for index in 0..<21 {
+            let output = directory.appendingPathComponent("automation-history-\(index).mp4")
+            let id = try coordinator.start(ExportRequest(
+                inputURLs: [first], outputURL: output,
+                settings: ExportSettings(width: 320, height: 180, codec: .h264)))
+            burstIDs.append(id)
+            _ = try await coordinator.wait(for: id)
+        }
+        try check(coordinator.recentJobs.count == 20,
+                  "completed job history did not retain exactly 20 jobs")
+        try check(coordinator.recentJobs.first?.id == burstIDs.last &&
+                  !coordinator.recentJobs.contains(where: { $0.id == burstIDs.first }),
+                  "completed job history did not retain the latest 20 jobs")
+        try check(coordinator.recentJobs.count == min(20, historyStart + 21),
+                  "completed job history count changed unexpectedly")
+
+        let corruptInput = directory.appendingPathComponent("automation-corrupt.png")
+        try Data("not a PNG image".utf8).write(to: corruptInput)
+        let failedOutput = directory.appendingPathComponent("automation-corrupt.mp4")
+        let failedID = try coordinator.start(ExportRequest(
+            inputURLs: [corruptInput], outputURL: failedOutput,
+            settings: ExportSettings(width: 320, height: 180, codec: .h264)))
+        var failureObserved = false
+        do { _ = try await coordinator.wait(for: failedID) }
+        catch { failureObserved = true }
+        try check(failureObserved && coordinator.job(id: failedID)?.state == .failed,
+                  "corrupt input did not produce a terminal failed job")
+        try check(coordinator.job(id: failedID)?.error?.contains(corruptInput.lastPathComponent) == true,
+                  "failed job did not retain the input filename")
+        try check(!FileManager.default.fileExists(atPath: failedOutput.path),
+                  "failed export published a destination")
+
+        let waiterOutput = directory.appendingPathComponent("automation-waiters.mp4")
+        let waiterID = try coordinator.start(ExportRequest(
+            inputURLs: [second], outputURL: waiterOutput,
+            settings: ExportSettings(width: 320, height: 180, codec: .h264)))
+        async let firstWaiter = coordinator.wait(for: waiterID)
+        async let secondWaiter = coordinator.wait(for: waiterID)
+        let (firstResult, secondResult) = try await (firstWaiter, secondWaiter)
+        try check(firstResult == waiterOutput && secondResult == waiterOutput,
+                  "concurrent waiters did not receive the same completed result")
     }
 
     private enum FrameColor { case red, green, other }

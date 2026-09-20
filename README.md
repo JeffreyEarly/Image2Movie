@@ -3,8 +3,7 @@
 A sandboxed macOS application for turning a sequence of images into a movie,
 using AppKit, a Swift 6 automation layer, and the existing Objective-C/Core Image/
 AVFoundation export engine. Requires **macOS 27 or later on Apple silicon**;
-build with Xcode 27 or later. The optional local MCP server uses pinned Swift
-packages; no additional runtime or companion installation is required.
+build with Xcode 27 or later. The optional bundled MCP bridge uses the official Swift SDK with pinned packages; no additional runtime or companion installation is required.
 
 Fresh preferences select **HEVC 10-bit** and **High** quality. Existing remembered
 codec choices are preserved. Choose H.264 or HEVC for MP4 output, or Apple ProRes
@@ -106,9 +105,10 @@ reauthorization and removal. Normal Add Images and Save dialogs continue to
 authorize the files you select.
 
 The native **Export Movie**, **Get Export Status**, and **Cancel Export** actions
-are available through App Intents. An optional authenticated MCP endpoint runs
-inside Image2Movie at `http://127.0.0.1:8765/mcp` while the app is open. It is
-disabled by default. See [Automation.md](Automation.md) for Shortcuts examples,
+are available through App Intents. Enable **Allow AI tools to use Image2Movie**
+to connect Codex through the signed `image2movie-mcp` executable bundled with the
+app. Access is disabled by default; Image2Movie must be open. The bridge uses
+stdio and a private App Group socket, with no TCP listener or bearer token. See [Automation.md](Automation.md) for Shortcuts examples,
 Codex setup, request formats, and troubleshooting.
 
 All entry points share one export coordinator. Automation preserves the
@@ -158,9 +158,9 @@ It also loads the built menu/window to exercise imports, Undo/Redo, export guard
 panel types, and isolated preference restoration in a fresh process.
 
 The same harness runs native Swift checks for coordination and file access, plus
-real loopback MCP connections using the official client SDK and a fixture token.
-Protocol checks cover authentication, Host/Origin validation, concurrent sessions,
-strict argument validation, session/request limits, and shutdown. Signed-app
+Unix socket transport checks using the official client SDK. Protocol checks cover
+concurrent sessions, strict argument validation, bounded messages, and shutdown.
+Peer code-signature authentication is checked separately in signed processes. Signed-app
 folder permissions and real Shortcuts/Codex pairing also require application-level
 checks; unsigned test success alone does not establish those behaviors.
 See [the automation validation record](Tests/AutomationValidation.md) for signed-app

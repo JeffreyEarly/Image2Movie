@@ -1,6 +1,6 @@
 # Image2Movie automation
 
-Image2Movie provides native Shortcuts actions and an optional local MCP server.
+Image2Movie provides native Shortcuts actions and an optional bundled MCP bridge.
 Both use the same exporter as the window. There is one active export at a time;
 additional requests receive a busy error. Automation does not replace your image
 list, change your saved settings, or consume Undo history.
@@ -50,32 +50,44 @@ and wait for temporary-output cleanup.
 
 ## Connect an MCP client
 
-In Automation Settings, select **Start Server**. The app listens only on
-`http://127.0.0.1:8765/mcp`, using Streamable HTTP. The endpoint requires a bearer
-token stored in the app's Keychain entry. **Copy Token** and **Copy Codex
-Configuration** provide the values needed by your client. No token is written to
-application logs.
+1. Install and open Image2Movie. A signed Xcode Debug build also works; keep that
+   particular copy open while testing.
+2. In Automation Settings, enable **Allow AI tools to use Image2Movie**.
+3. Authorize input and output folders.
+4. Choose **Copy Codex Configuration** and add the copied block to your Codex
+   configuration. Codex supports command-based STDIO servers in `config.toml`;
+   see the [official MCP setup documentation](https://developers.openai.com/codex/mcp).
+5. Restart or reconnect the client, then request an export.
 
-For Codex, the copied configuration is:
+For an app installed in `/Applications`, the configuration is:
 
 ```toml
 [mcp_servers.image2movie]
-url = "http://127.0.0.1:8765/mcp"
-bearer_token_env_var = "IMAGE2MOVIE_MCP_TOKEN"
+command = "/Applications/Image2Movie.app/Contents/MacOS/image2movie-mcp"
 ```
 
-Set `IMAGE2MOVIE_MCP_TOKEN` in the environment of the process that launches your
-Codex client, then restart that client. A variable exported in a terminal is not
-automatically available to an already-running desktop app. Alternatively,
-configure the client's supported HTTP authorization-header setting with the
-copied bearer token. Image2Movie never edits Codex configuration itself. See
-[Codex MCP configuration](https://developers.openai.com/codex/mcp).
+The app generates the actual path, including TOML escaping. Image2Movie never
+edits Codex settings. If the app moves, copy its configuration again. After
+restarting or updating Image2Movie, reconnect the client.
 
-**Rotate Token** closes existing MCP sessions and invalidates the previous token.
-Update the client's token and reconnect afterward. **Stop Server** closes the
-listener; accepted exports continue and remain cancellable in the movie window.
-Enabling the server is remembered for subsequent app launches. Nothing continues
-listening after the app exits.
+Codex launches the bundled executable automatically. It relays standard MCP
+messages over stdin/stdout to a private Unix-domain socket in the shared App
+Group. The app and bridge verify the same user, Early Innovations code signatures,
+and the containing app installation before exchanging MCP messages. A bridge
+from one build cannot silently connect to another copy. Diagnostics use stderr.
+
+Enabling access authorizes local tools that launch the signed bridge; it does
+not authenticate Codex specifically. The bridge has its own sandbox and receives
+no folder grants. All file authorization and exports remain in the main app.
+
+Access is disabled by default and remembered after explicit enablement. Disabling
+it closes connections; accepted exports continue and remain visible and
+cancellable in Image2Movie. The app must already be open. There is no TCP
+listener, bearer token, additional installation, login item, or automatic launch.
+
+This stdio design supersedes the earlier HTTP prototype. Its old enablement
+preference and app-owned Keychain token are removed without carrying enablement
+forward. Folder grants and export preferences are preserved.
 
 ## Tools and export requests
 
@@ -106,10 +118,11 @@ error above 10,000 directory entries; export itself accepts an explicit list and
 does not require inspection. Tool results are limited to 128 KiB; reduce the page
 size if unusually long filenames exceed that limit.
 
-The server limits request bodies to 1 MiB, concurrent connections and sessions
-to 16, and requests per session to 100. Sessions expire after 10 minutes idle or
-one hour total; clients should reinitialize after a session-not-found response.
-These limits do not cancel export jobs. Reconnect and poll the same job identifier.
+Requests are limited to 1 MiB and at most 16 connections. Each connection owns
+an independent MCP session and processes requests sequentially with backpressure.
+Responses allow room for the 128 KiB tool result and its protocol envelope. JSON-RPC
+batches are not supported. These transport limits do not cancel accepted export
+jobs. After reconnecting, poll the same job identifier.
 
 ## Troubleshooting
 
@@ -118,11 +131,12 @@ These limits do not cancel export jobs. Reconnect and poll the same job identifi
 - **Folder unavailable:** reconnect the drive and reauthorize the folder. A path
   string from another program cannot grant sandbox access.
 - **Destination exists:** choose a new filename or explicitly enable overwrite.
-- **Cannot listen on port 8765:** another application is using the port. Stop
-  that listener before starting Image2Movie's server.
-- **Unauthorized:** copy the current token, check the client's authorization
-  configuration, and reconnect after rotation.
-- **Session expired:** initialize a new MCP session; an accepted job keeps running.
+- **Cannot connect:** open the same app copy named in the configuration and enable
+  AI-tool access. Reconnect after starting the app or changing that setting.
+- **Peer verification failed:** use the executable inside the signed app bundle.
+  Rebuild/reinstall both pieces together; do not copy the helper out of the app.
+- **Version mismatch:** update the app and use its bundled bridge, then reconnect.
+- **Connection limit:** close unused clients and reconnect.
 - **Job not found:** jobs are session-local to the running app and only the latest
   20 terminal jobs are kept. Relaunching clears that history.
 
@@ -130,7 +144,7 @@ These limits do not cancel export jobs. Reconnect and poll the same job identifi
 
 Run `bash Tests/run-regressions.sh` for the export/UI harness and native Swift/MCP
 checks. The command generates temporary fixtures and does not use your image
-library or live MCP token. Unsigned command-line tests cannot establish sandbox
+library. Unsigned command-line tests cannot establish sandbox
 bookmark behavior or real client pairing. See the [signed-app validation
 record](Tests/AutomationValidation.md) for completed checks and remaining acceptance
 tests.

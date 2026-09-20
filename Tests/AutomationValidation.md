@@ -1,6 +1,6 @@
 # Automation validation
 
-Tested on September 19, 2026 with macOS 27, Xcode 27, and Apple silicon.
+Tested on September 19–20, 2026 with macOS 27, Xcode 27, and Apple silicon.
 The application uses Early Innovations, LLC's Apple Development identity,
 team `BWNJC57N56`. This is development signing, not an App Store submission.
 
@@ -17,19 +17,47 @@ team `BWNJC57N56`. This is development signing, not an App Store submission.
   cancellation, and refused overwrite. A deterministic finalization test creates
   a destination after preflight and verifies its bytes survive for each codec.
 - Swift coordinator tests for stable automation defaults, duplicate inputs,
-  busy behavior, exactly one terminal result, and preserved interactive state.
+  busy behavior, failure/cancellation results, concurrent waiters, the latest-20
+  history limit, and preserved interactive state.
 - File-access tests for canonical paths, traversal and symlink rejection, and
   grant roles. An unsigned harness cannot prove security-scoped bookmark behavior.
-- Live loopback MCP tests using the official SDK and a fixture token:
-  authentication, Host/Origin checks, isolated sessions, schema validation,
-  bounded requests/results/sessions, port conflicts, and shutdown/reconnect.
-  One session survives five completed requests on fresh connections; another
-  performs 30 immediate sequential requests on a single persistent connection.
+- Official SDK client/server tests over Unix socket pairs: six-tool discovery,
+  isolated sessions with overlapping request IDs, strict argument validation,
+  notification bursts, 1 MiB inbound boundary, oversized input/output, invalid
+  batches and fractional IDs, stopped-socket rejection, and awaited cleanup.
+- Isolated defaults and TOML checks: the new opt-in defaults off, HTTP enablement
+  does not carry forward, explicit enablement persists, and paths are escaped.
+- An independent GPT-6 Astra review found and verified fixes for descriptor reuse,
+  unbounded admission before actor dispatch, notification buffering, request-ID
+  matching, shutdown during registration, and inherited nonblocking socket flags.
+  No further actionable production issue remained in the final source review.
 
 Run `bash Tests/run-regressions.sh`. Set `KEEP_TEST_OUTPUT=1` to retain generated
 fixtures and `REGRESSION_BUILD_DIR` to reuse an Xcode package/build cache.
 
-## Signed application checks
+## Signed bridge checks (September 20)
+
+- Debug and Release app/helper builds pass, along with static analysis and strict
+  nested signature verification. Both binaries have their own App Sandbox and
+  shared App Group entitlements. The helper has no file grants, inherited sandbox,
+  networking, or debugger entitlement; Release removes debugger access throughout.
+- `bash Tests/run-signed-bridge-proof.sh` runs independently signed, sandboxed
+  processes using the production identity code. Mutual authentication succeeds.
+  An unsigned same-user client, an identical signed app copy at another path,
+  and an unsigned rogue server are rejected. This proves the design is feasible;
+  it does not substitute for testing the production MCP listener in the app.
+- Launching the actual Release bridge with access unavailable returns a clear
+  instruction to open Image2Movie and enable AI-tool access. Stdout is empty.
+- The HTTP listener and network entitlement are removed. Direct NIO products and
+  their notices are removed; dependencies used by the official MCP SDK remain.
+
+The signed proof needs an Early Innovations development identity. Override
+`SIGNING_IDENTITY` if the default `Apple Development` name is ambiguous.
+
+## Earlier signed application checks (September 19)
+
+These checks establish the pre-stdio foundation. They do not establish the new
+transport's signed-app runtime acceptance.
 
 - Launched the final signed Debug and Release builds successfully.
 - Launched the sandboxed app, authorized input/output fixture folders through
@@ -40,8 +68,6 @@ fixtures and `REGRESSION_BUILD_DIR` to reuse an Xcode package/build cache.
   **Cancel Export and Quit**. The process exited, the existing destination stayed
   byte-for-byte unchanged, and no extra output file appeared beside it. Relaunch
   succeeded; the original GUI size preference was restored after the check.
-- Started and stopped the in-app MCP listener; Keychain token creation worked.
-  No real token was logged or included in test fixtures.
 - Verified all three actions appear in Shortcuts. A test Shortcut passed an
   externally selected image to an authorized output folder and exported in both
   foreground and background modes. Overwrite refusal returned a clear error and
@@ -68,11 +94,32 @@ quitting the stale copy and registering/relaunching the current build resolved i
 
 - Exercise a following Shortcut action that saves or shares the returned movie.
 - Exercise long native Shortcut exports and cancellation from Shortcuts itself.
-- Pair Codex desktop with the signed app's real token and complete inspection,
-  export, status polling, reconnect, cancellation, and token rotation.
+- Run the production signed stdio bridge with Debug and Release apps, including
+  two app copies, restart/update, unauthorized peers, incompatible versions,
+  malformed/oversized input, connection cap, disconnect/reconnect, disable during
+  export, bridge termination, app quitting, and stale socket cleanup.
+- Pair Codex desktop using the generated command configuration and complete
+  inspection, export, status polling, reconnect, and cancellation. No token is
+  required; Codex configuration remains user-managed.
 - Test a fresh sandbox container and revoked/stale authorization in the signed
   application. Test external-volume output when a writable external volume is
   available; none was mounted during this pass.
+
+The Mac locked during the September 20 native UI checks. No new signed-app
+runtime or real Codex result is claimed for that session.
+
+For a running signed app with AI-tool access enabled, use:
+
+```sh
+python3 Tests/run-stdio-client-check.py /path/to/Image2Movie.app/Contents/MacOS/image2movie-mcp
+```
+
+The script checks real stdio sessions, isolation, message limits, connection bounds,
+and reconnect. Supply `--input-id`, `--input-root`, `--output-id`, and
+`--output-root` for generated fixture inspection, export, polling, and cancellation.
+Those folders must already be authorized through the app. It does not edit app
+preferences, folder grants, or Codex settings. This script remains unexecuted
+against the production signed app until UI access resumes.
 
 The standalone harness does not replace these checks. Keep the milestone open
 until its signed-app and real-client acceptance criteria pass.

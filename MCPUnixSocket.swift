@@ -53,22 +53,6 @@ enum MCPUnixSocket {
         }
     }
 
-    static func readExact(_ count: Int, from descriptor: Int32) throws -> Data {
-        guard count >= 0 && count <= 1_048_576 else { throw SocketError.messageTooLarge }
-        var data = Data(count: count)
-        try data.withUnsafeMutableBytes { buffer in
-            guard let base = buffer.baseAddress else { return }
-            var offset = 0
-            while offset < count {
-                let received = Darwin.read(descriptor, base.advanced(by: offset), count - offset)
-                if received > 0 { offset += received; continue }
-                if received < 0 && errno == EINTR { continue }
-                throw SocketError.io(received == 0 ? 0 : errno)
-            }
-        }
-        return data
-    }
-
     static func readLine(from descriptor: Int32, limit: Int) throws -> Data {
         var result = Data()
         while result.count <= limit {

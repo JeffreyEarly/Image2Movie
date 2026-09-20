@@ -100,9 +100,14 @@ reproduces the desktop error against the signed app.
   authorized-folder and sequence inspection, a real HEVC export with completion
   polling, and UHD cancellation with exact destination-byte preservation. These
   calls used an ephemeral diagnostic app-server session, with no saved task or
-  configuration changes. This verifies the actual Codex client implementation;
-  normal tool use in the existing desktop conversation still needs reconnection
-  after its earlier failed startup.
+  configuration changes.
+- Codex then refreshed its tools in the existing desktop conversation without
+  another user restart. Direct `mcp__image2movie__` calls passed all six tools:
+  capabilities and folder discovery, sequence inspection, a 13-frame HEVC export
+  at 12 fps (including a duplicate input), completion polling, and cancellation of
+  a separate 2,000-frame UHD job. The cancelled overwrite preserved the sentinel
+  destination bytes exactly. This establishes real Codex desktop export and
+  cancellation acceptance, in addition to the diagnostic client checks.
 
 Image2Movie was rebuilt and relaunched at the configured Release path. Its AI
 opt-in and folder grants remained available. Setup instructions now say to quit

@@ -11,6 +11,7 @@ import os
 from pathlib import Path
 import selectors
 import shutil
+import signal
 import struct
 import subprocess
 import sys
@@ -130,6 +131,7 @@ class Session:
         return result.get("structuredContent", {})
 
     def close(self):
+        was_running = self.process.poll() is None
         if self.process.stdin and not self.process.stdin.closed:
             self.process.stdin.close()
         graceful = True
@@ -146,7 +148,7 @@ class Session:
         self.selector.close()
         self.process.stdout.close()
         self.process.stderr.close()
-        return graceful
+        return was_running and graceful and self.process.returncode == 0
 
 
 def png(path):
@@ -161,10 +163,10 @@ def png(path):
                      chunk(b"IDAT", zlib.compress(pixels)) + chunk(b"IEND", b""))
 
 
-def optional_export(session, args, folders):
+def optional_export(session, args, folders, sessions):
     fields = (args.input_id, args.input_root, args.output_id, args.output_root)
     if not any(fields):
-        return
+        return session
     check(all(fields), "export check needs both folder IDs and both local root paths")
     input_id = str(uuid.UUID(args.input_id)).upper()
     output_id = str(uuid.UUID(args.output_id)).upper()
@@ -180,19 +182,22 @@ def optional_export(session, args, folders):
     name = ".image2movie-stdio-check-" + uuid.uuid4().hex
     fixture_dir = args.input_root / name
     short_output = args.output_root / (name + "-short.mp4")
+    survival_output = args.output_root / (name + "-survival.mp4")
     cancel_output = args.output_root / (name + "-cancel.mp4")
     fixture_dir.mkdir()
     jobs = {}
+    passed = False
 
-    def start_export(reference, frames, output, width, height):
+    def start_export(reference, frames, output, width, height, overwrite=False):
         export = session.tool("export_movie", {
             "inputs": [reference] * frames,
             "output": {"folder_id": output_id, "relative_path": output.name},
             "width": width, "height": height, "frame_rate": 30,
-            "codec": "h264", "quality": "standard", "overwrite": False,
+            "codec": "h264", "quality": "standard", "overwrite": overwrite,
         }, timeout=20)
         job_id = export.get("job_id")
         check(job_id, "export_movie returned no job ID")
+        check(export.get("state") == "running", "export_movie was not accepted as running")
         jobs[job_id] = None
         return job_id
 
@@ -205,6 +210,28 @@ def optional_export(session, args, folders):
                 return status
             time.sleep(0.2)
         raise CheckFailure("export did not reach a terminal state")
+
+    def reconnect(abrupt=False):
+        nonlocal session
+        old = session
+        check(old.process.poll() is None, "bridge exited before disconnect test")
+        if abrupt:
+            old.process.terminate()
+            try:
+                exit_code = old.process.wait(timeout=3)
+            except subprocess.TimeoutExpired as error:
+                raise CheckFailure("bridge did not terminate promptly") from error
+            old.close()
+            check(exit_code == -signal.SIGTERM,
+                  f"terminated bridge exited with unexpected status {exit_code}")
+        else:
+            check(old.close(), "bridge did not exit cleanly on stdin EOF")
+        sessions.remove(old)
+        session = None
+        replacement = Session(args.helper)
+        sessions.append(replacement)
+        session = replacement
+        replacement.initialize()
 
     try:
         png(fixture_dir / "frame.png")
@@ -222,30 +249,52 @@ def optional_export(session, args, folders):
               "completed export has no nonempty output file")
         print("generated fixture inspection and completed export: passed")
 
-        cancel_id = start_export(reference, 1000, cancel_output, 1920, 1080)
+        survival_id = start_export(reference, 900, survival_output, 960, 540)
+        reconnect()  # EOF closes only this bridge, not the accepted export.
+        survival_running = session.tool("get_export_status", {"job_id": survival_id})
+        check(survival_running.get("state") == "running",
+              "accepted export finished before its bridge disconnect was verified")
+        survival_status = terminal_status(survival_id, 60)
+        check(survival_status["state"] == "completed",
+              "accepted export did not survive bridge EOF")
+        check(survival_output.is_file() and survival_output.stat().st_size > 0,
+              "surviving export has no nonempty output file")
+        print("accepted export survived bridge EOF and reconnect: passed")
+
+        sentinel = b"Image2Movie overwrite preservation fixture\n"
+        cancel_output.write_bytes(sentinel)
+        cancel_id = start_export(reference, 1000, cancel_output, 1920, 1080,
+                                 overwrite=True)
+        reconnect(abrupt=True)  # A terminated helper must not cancel the job.
         cancellation = session.tool("cancel_export", {"job_id": cancel_id})
         check(cancellation.get("cancelled") is True, "cancel_export did not acknowledge cancellation")
         cancel_status = terminal_status(cancel_id, 20)
         check(cancel_status["state"] == "cancelled",
               "long export finished before cancellation: " + str(cancel_status["state"]))
-        print("generated fixture export cancellation: passed")
+        check(cancel_output.read_bytes() == sentinel,
+              "cancelled overwrite changed the existing destination")
+        print("terminated bridge, cancellation, and overwrite preservation: passed")
+        passed = True
     finally:
         for job_id, state in list(jobs.items()):
             if state is not None:
                 continue
+            if session is None or session.process.poll() is not None:
+                continue
             try:
                 session.tool("cancel_export", {"job_id": job_id})
                 terminal_status(job_id, 5)
-            except CheckFailure:
+            except (CheckFailure, ValueError, OSError):
                 pass
-        if all(state is not None for state in jobs.values()):
+        if passed and all(state is not None for state in jobs.values()):
             shutil.rmtree(fixture_dir)
-            for output in (short_output, cancel_output):
+            for output in (short_output, survival_output, cancel_output):
                 if output.exists():
                     output.unlink()
         else:
-            print("Fixture retained while export status is uncertain: " + str(fixture_dir),
+            print("Fixture retained after incomplete export check: " + str(fixture_dir),
                   file=sys.stderr)
+    return session
 
 
 def expect_rejected(helper, raw):
@@ -306,7 +355,7 @@ def main():
         sessions.append(reconnect)
         reconnect.initialize()
         reconnect.tool("get_capabilities")
-        optional_export(reconnect, args, folders)
+        reconnect = optional_export(reconnect, args, folders, sessions)
         check(reconnect.close(), "reconnected session needed forced termination")
         sessions.remove(reconnect)
         print("reconnect: passed")

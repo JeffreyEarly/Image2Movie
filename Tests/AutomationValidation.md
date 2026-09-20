@@ -107,7 +107,8 @@ reproduces the desktop error against the signed app.
   at 12 fps (including a duplicate input), completion polling, and cancellation of
   a separate 2,000-frame UHD job. The cancelled overwrite preserved the sentinel
   destination bytes exactly. This establishes real Codex desktop export and
-  cancellation acceptance, in addition to the diagnostic client checks.
+  cancellation acceptance, in addition to the diagnostic client checks. The
+  completed movie decodes to 13 HEVC frames at 640 × 360, lasting 13/12 seconds.
 
 Image2Movie was rebuilt and relaunched at the configured Release path. Its AI
 opt-in and folder grants remained available. Setup instructions now say to quit
@@ -153,9 +154,8 @@ quitting the stale copy and registering/relaunching the current build resolved i
   copies, restart/update, production-listener unauthorized peers, incompatible
   versions, app quitting, and stale socket cleanup. Release sessions, protocol
   bounds, disconnect/reconnect, disable during export, and bridge termination pass.
-- Pair Codex desktop using the generated command configuration and complete
-  inspection, export, status polling, reconnect, and cancellation. No token is
-  required; Codex configuration remains user-managed.
+- Complete Codex onboarding checks for installed/Xcode paths and moved app
+  copies. The configured Release copy's desktop export and cancellation pass.
 - Test a fresh sandbox container and revoked/stale authorization in the signed
   application. Test external-volume output when a writable external volume is
   available; none was mounted during this pass.

@@ -11,6 +11,7 @@
 #import <VideoToolbox/VideoToolbox.h>
 #import <errno.h>
 #import <stdio.h>
+#import <sys/stat.h>
 
 @interface ImagesToMovie () {
     dispatch_queue_t _exportQueue;
@@ -161,6 +162,7 @@ static NSDictionary *MovieCompressionSettings(AVVideoCodecType codec, MovieQuali
         self.codec = AVVideoCodecTypeHEVC;
         self.qualityMode = MovieQualityHigh;
         self.averageBitRate = 20000000;
+        self.allowOverwrite = YES;
 	}
 	
 	return self;
@@ -205,6 +207,7 @@ static NSDictionary *MovieCompressionSettings(AVVideoCodecType codec, MovieQuali
     NSUInteger frameRate = self.frameRate;
     NSUInteger bitRate = self.averageBitRate;
     MovieQualityMode quality = self.qualityMode;
+    BOOL allowOverwrite = self.allowOverwrite;
     AVVideoCodecType codec = [self.codec copy];
     BOOL h264 = [codec isEqualToString:AVVideoCodecTypeH264];
     BOOL hevc = [codec isEqualToString:AVVideoCodecTypeHEVC];
@@ -226,8 +229,9 @@ static NSDictionary *MovieCompressionSettings(AVVideoCodecType codec, MovieQuali
     }
 
     AVFileType fileType = proRes ? AVFileTypeQuickTimeMovie : AVFileTypeMPEG4;
-    NSString *temporaryPath = [[destinationPath stringByDeletingLastPathComponent]
-        stringByAppendingPathComponent:[NSString stringWithFormat:@".Image2Movie-%@.%@", NSUUID.UUID.UUIDString, proRes ? @"mov" : @"mp4"]];
+    NSURL *destinationURL = [NSURL fileURLWithPath:destinationPath];
+    __block NSURL *temporaryDirectory = nil;
+    __block NSString *temporaryPath = nil;
     NSObject *exportIdentity = [[NSObject alloc] init];
     __block AVAssetWriter *writer = nil;
     __block AVAssetWriterInput *writerInput = nil;
@@ -246,22 +250,45 @@ static NSDictionary *MovieCompressionSettings(AVVideoCodecType codec, MovieQuali
         // Every caller runs on the same queue, including late writer callbacks.
         if (finished) return;
         finished = YES;
+        __block NSError *publicationError = error;
+        if (!publicationError) {
+            NSFileCoordinator *coordinator = [[NSFileCoordinator alloc] initWithFilePresenter:nil];
+            NSError *coordinationError = nil;
+            [coordinator coordinateWritingItemAtURL:destinationURL options:NSFileCoordinatorWritingForReplacing
+                error:&coordinationError byAccessor:^(NSURL *coordinatedURL) {
+                @synchronized (self) {
+                    if (self->_cancelRequested) {
+                        publicationError = MovieCancelledError();
+                    } else {
+                        // This atomic, same-volume rename is the commit point. RENAME_EXCL
+                        // also protects a destination created after preflight validation.
+                        int result = renamex_np(temporaryPath.fileSystemRepresentation,
+                            coordinatedURL.fileSystemRepresentation, allowOverwrite ? 0 : RENAME_EXCL);
+                        if (result != 0) {
+                            int code = errno;
+                            NSError *underlying = [NSError errorWithDomain:NSPOSIXErrorDomain code:code userInfo:nil];
+                            publicationError = MovieError(code == EEXIST ?
+                                @"A movie already exists at the destination. Enable overwrite to replace it." :
+                                @"The completed movie could not be moved to its destination.", underlying);
+                        }
+                    }
+                    self->_cancelExport = nil;
+                }
+            }];
+            if (coordinationError) publicationError = MovieError(@"The destination could not be coordinated for saving.", coordinationError);
+        }
         @synchronized (self) {
-            if (self->_cancelRequested) error = MovieCancelledError();
-            // This lock is also the cancellation boundary: once rename succeeds,
-            // cancellation can no longer turn a committed export into a failure.
-            if (!error && rename(temporaryPath.fileSystemRepresentation, destinationPath.fileSystemRepresentation) != 0) {
-                NSError *underlying = [NSError errorWithDomain:NSPOSIXErrorDomain code:errno userInfo:nil];
-                error = MovieError(@"The completed movie could not be moved to its destination.", underlying);
-            }
+            // Once publication cleared the cancellation handler, its result is final.
+            if (self->_cancelExport && self->_cancelRequested) publicationError = MovieCancelledError();
             self->_cancelExport = nil;
         }
+        error = publicationError;
         if (error) [writer cancelWriting];
         NSError *cleanupError = nil;
-        if (![[NSFileManager defaultManager] removeItemAtPath:temporaryPath error:&cleanupError] &&
+        if (temporaryDirectory && ![[NSFileManager defaultManager] removeItemAtURL:temporaryDirectory error:&cleanupError] &&
             cleanupError.code != NSFileNoSuchFileError) {
-            error = MovieError([NSString stringWithFormat:@"%@ Temporary movie cleanup also failed: %@",
-                error.localizedDescription ?: @"The movie was saved.", cleanupError.localizedDescription], error ?: cleanupError);
+            // Cleanup must not change an already committed success or cancellation.
+            NSLog(@"Image2Movie could not remove temporary export space: %@", cleanupError.localizedDescription);
         }
         adaptor = nil;
         renderer = nil;
@@ -293,6 +320,20 @@ static NSDictionary *MovieCompressionSettings(AVVideoCodecType codec, MovieQuali
         if (finished) return;
         if (isCancelled()) { finish(MovieCancelledError()); return; }
         NSError *error = nil;
+        struct stat destinationInfo;
+        if (lstat(destinationPath.fileSystemRepresentation, &destinationInfo) == 0) {
+            if (!allowOverwrite || !S_ISREG(destinationInfo.st_mode)) {
+                finish(MovieError(!allowOverwrite ? @"A movie already exists at the destination. Enable overwrite to replace it." :
+                    @"The destination must be a regular file, not a folder or symbolic link.", nil)); return;
+            }
+        } else if (errno != ENOENT) {
+            finish(MovieError(@"The destination could not be accessed.",
+                [NSError errorWithDomain:NSPOSIXErrorDomain code:errno userInfo:nil])); return;
+        }
+        temporaryDirectory = [NSFileManager.defaultManager URLForDirectory:NSItemReplacementDirectory
+            inDomain:NSUserDomainMask appropriateForURL:destinationURL create:YES error:&error];
+        if (!temporaryDirectory) { finish(MovieError(@"Temporary space could not be created on the destination volume.", error)); return; }
+        temporaryPath = [[temporaryDirectory URLByAppendingPathComponent:proRes ? @"movie.mov" : @"movie.mp4"] path];
         renderer = [[MovieFrameRenderer alloc] initWithFrameSize:size codec:codec];
         if (!renderer) { finish(MovieError(@"The movie frame renderer could not be created.", nil)); return; }
         if (isCancelled()) { finish(MovieCancelledError()); return; }

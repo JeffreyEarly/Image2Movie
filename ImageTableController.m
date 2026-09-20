@@ -8,6 +8,7 @@
 
 #import "ImageTableController.h"
 #import "ImagesToMovie.h"
+#import "Image2Movie-Swift.h"
 
 static NSPasteboardType const ImageRowPasteboardType = @"org.image2movie.row-index";
 
@@ -15,11 +16,13 @@ static NSPasteboardType const ImageRowPasteboardType = @"org.image2movie.row-ind
 @property(nonatomic, copy) NSArray<NSString *> *paths;
 @property(nonatomic, copy) NSArray<NSSortDescriptor *> *sortDescriptors;
 @property(nonatomic, copy) NSIndexSet *selectionIndexes;
+@property(nonatomic, copy) NSDictionary<NSString *, FileAccessLease *> *leasesByPath;
 @end
 @implementation ImageTableState
 @end
 
 @interface ImageTableController ()
+@property(nonatomic, copy) NSDictionary<NSString *, FileAccessLease *> *leasesByPath;
 - (void)restoreState:(ImageTableState *)state actionName:(NSString *)actionName;
 @end
 
@@ -92,7 +95,7 @@ static NSPasteboardType const ImageRowPasteboardType = @"org.image2movie.row-ind
     [self replacePaths:paths
        sortDescriptors:self.imagePathArrayController.sortDescriptors
       selectionIndexes:[NSIndexSet indexSet]
-            actionName:@"Remove Images"];
+            actionName:@"Remove Images" additionalLeases:nil];
 }
 
 + (NSArray<UTType *> *)supportedImageContentTypes
@@ -122,7 +125,9 @@ static NSPasteboardType const ImageRowPasteboardType = @"org.image2movie.row-ind
     NSMutableArray<NSString *> *folders = [NSMutableArray array];
     NSMutableArray<NSString *> *unsupported = [NSMutableArray array];
     NSMutableArray<NSString *> *unreadable = [NSMutableArray array];
-    [self classifyURLs:URLs acceptedPaths:accepted folders:folders unsupported:unsupported unreadable:unreadable];
+    NSMutableDictionary<NSString *, FileAccessLease *> *importLeases = [NSMutableDictionary dictionary];
+    [self classifyURLs:URLs acceptedPaths:accepted folders:folders unsupported:unsupported
+           unreadable:unreadable leases:importLeases];
 
     if (accepted.count && [self canMutate]) {
         NSMutableArray *paths = [self.imagesToMovie.imagePaths mutableCopy];
@@ -130,7 +135,7 @@ static NSPasteboardType const ImageRowPasteboardType = @"org.image2movie.row-ind
         [self replacePaths:paths
            sortDescriptors:self.imagePathArrayController.sortDescriptors
           selectionIndexes:self.imageTable.selectedRowIndexes
-                actionName:@"Add Images"];
+                actionName:@"Add Images" additionalLeases:importLeases];
     } else {
         [accepted removeAllObjects];
     }
@@ -151,6 +156,7 @@ static NSPasteboardType const ImageRowPasteboardType = @"org.image2movie.row-ind
     state.paths = [self.imagesToMovie.imagePaths copy] ?: @[];
     state.sortDescriptors = [self.imagePathArrayController.sortDescriptors copy] ?: @[];
     state.selectionIndexes = [self.imageTable.selectedRowIndexes copy] ?: [NSIndexSet indexSet];
+    state.leasesByPath = [self.leasesByPath copy] ?: @{};
     return state;
 }
 
@@ -158,6 +164,7 @@ static NSPasteboardType const ImageRowPasteboardType = @"org.image2movie.row-ind
      sortDescriptors:(NSArray<NSSortDescriptor *> *)sortDescriptors
     selectionIndexes:(NSIndexSet *)selectionIndexes
           actionName:(NSString *)actionName
+    additionalLeases:(NSDictionary<NSString *, FileAccessLease *> *)additionalLeases
 {
     if (![self canMutate]) return;
     ImageTableState *before = [self currentState];
@@ -166,6 +173,13 @@ static NSPasteboardType const ImageRowPasteboardType = @"org.image2movie.row-ind
     if ([before.paths isEqual:paths] && [before.sortDescriptors isEqual:sorts] &&
         [before.selectionIndexes isEqual:selection]) return;
 
+    NSMutableDictionary<NSString *, FileAccessLease *> *nextLeases = [self.leasesByPath mutableCopy] ?: [NSMutableDictionary dictionary];
+    [nextLeases addEntriesFromDictionary:additionalLeases ?: @{}];
+    NSSet<NSString *> *retainedPaths = [NSSet setWithArray:paths];
+    for (NSString *path in [nextLeases.allKeys copy]) {
+        if (![retainedPaths containsObject:path]) [nextLeases removeObjectForKey:path];
+    }
+    self.leasesByPath = nextLeases;
     self.imagesToMovie.imagePaths = [paths mutableCopy];
     self.imagePathArrayController.sortDescriptors = sorts;
     [self.imagePathArrayController rearrangeObjects];
@@ -187,7 +201,17 @@ static NSPasteboardType const ImageRowPasteboardType = @"org.image2movie.row-ind
 {
     if (![self canMutate]) return;
     [self replacePaths:state.paths sortDescriptors:state.sortDescriptors
-      selectionIndexes:state.selectionIndexes actionName:actionName];
+      selectionIndexes:state.selectionIndexes actionName:actionName additionalLeases:state.leasesByPath];
+}
+
+- (FileAccessLease *)leaseForImagePath:(NSString *)path
+{
+    return self.leasesByPath[path];
+}
+
+- (NSArray<FileAccessLease *> *)currentImageLeases
+{
+    return self.leasesByPath.allValues ?: @[];
 }
 
 - (void)classifyURLs:(NSArray<NSURL *> *)URLs
@@ -195,12 +219,19 @@ static NSPasteboardType const ImageRowPasteboardType = @"org.image2movie.row-ind
              folders:(NSMutableArray<NSString *> *)folders
          unsupported:(NSMutableArray<NSString *> *)unsupported
           unreadable:(NSMutableArray<NSString *> *)unreadable
+              leases:(NSMutableDictionary<NSString *, FileAccessLease *> *)leases
 {
     NSFileManager *fileManager = NSFileManager.defaultManager;
     NSArray<UTType *> *supportedTypes = self.class.supportedImageContentTypes;
     for (NSURL *URL in URLs) {
         if (![URL isKindOfClass:NSURL.class] || !URL.isFileURL) {
             [unreadable addObject:URL.lastPathComponent ?: URL.description ?: @"Unknown item"];
+            continue;
+        }
+        NSError *leaseError = nil;
+        FileAccessLease *lease = [[FileAccessManager shared] leaseForReadingURLs:@[URL] error:&leaseError];
+        if (!lease) {
+            [unreadable addObject:URL.lastPathComponent ?: @"Unknown item"];
             continue;
         }
         NSNumber *isDirectory;
@@ -222,7 +253,10 @@ static NSPasteboardType const ImageRowPasteboardType = @"org.image2movie.row-ind
         for (UTType *type in supportedTypes) {
             if ([contentType conformsToType:type]) { supported = YES; break; }
         }
-        if (supported) [accepted addObject:URL.path];
+        if (supported) {
+            [accepted addObject:URL.path];
+            if (!self.leasesByPath[URL.path] && !leases[URL.path]) leases[URL.path] = lease;
+        }
         else [unsupported addObject:URL.lastPathComponent];
     }
 }
@@ -272,7 +306,7 @@ static NSPasteboardType const ImageRowPasteboardType = @"org.image2movie.row-ind
         [self.imageTable selectRowIndexes:insertIndexes byExtendingSelection:NO];
         return;
     }
-    [self replacePaths:result sortDescriptors:@[] selectionIndexes:insertIndexes actionName:@"Reorder Images"];
+    [self replacePaths:result sortDescriptors:@[] selectionIndexes:insertIndexes actionName:@"Reorder Images" additionalLeases:nil];
 }
 
 - (id<NSPasteboardWriting>)tableView:(NSTableView *)tableView pasteboardWriterForRow:(NSInteger)row

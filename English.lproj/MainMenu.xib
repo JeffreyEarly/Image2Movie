@@ -31,6 +31,10 @@
                                 <connections><action selector="orderFrontStandardAboutPanel:" target="-1" id="about-action"/></connections>
                             </menuItem>
                             <menuItem isSeparatorItem="YES" id="app-separator-1"/>
+                            <menuItem title="Automation Settings…" keyEquivalent="," id="automation-settings-item">
+                                <connections><action selector="showAutomationSettings:" target="app-delegate" id="automation-settings-action"/></connections>
+                            </menuItem>
+                            <menuItem isSeparatorItem="YES" id="automation-settings-separator"/>
                             <menuItem title="Services" id="services-item">
                                 <modifierMask key="keyEquivalentModifierMask"/>
                                 <menu key="submenu" title="Services" systemMenu="services" id="services-menu"/>

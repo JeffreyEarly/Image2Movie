@@ -3,7 +3,7 @@
 	archiveVersion = 1;
 	classes = {
 	};
-	objectVersion = 46;
+	objectVersion = 56;
 	objects = {
 
 /* Begin PBXBuildFile section */
@@ -26,6 +26,25 @@
 		A02700000000000000000012 /* ImageIO.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A02700000000000000000002 /* ImageIO.framework */; };
 		A02700000000000000000013 /* VideoToolbox.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A02700000000000000000003 /* VideoToolbox.framework */; };
 		A02700000000000000000014 /* MovieFrameRenderer.m in Sources */ = {isa = PBXBuildFile; fileRef = A02700000000000000000004 /* MovieFrameRenderer.m */; };
+		A02900000000000000010001 /* ExportTypes.swift in Sources */ = {isa = PBXBuildFile; fileRef = A02900000000000000000001 /* ExportTypes.swift */; };
+		A02900000000000000010002 /* ExportCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = A02900000000000000000002 /* ExportCoordinator.swift */; };
+		A02900000000000000010003 /* MovieIntents.swift in Sources */ = {isa = PBXBuildFile; fileRef = A02900000000000000000003 /* MovieIntents.swift */; };
+		A02900000000000000010004 /* FileAccessManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = A02900000000000000000004 /* FileAccessManager.swift */; };
+		A02900000000000000010005 /* AutomationSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = A02900000000000000000005 /* AutomationSettings.swift */; };
+		A02900000000000000010006 /* MCPHTTPServer.swift in Sources */ = {isa = PBXBuildFile; fileRef = A02900000000000000000006 /* MCPHTTPServer.swift */; };
+		A02900000000000000010007 /* MCPServerController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A02900000000000000000007 /* MCPServerController.swift */; };
+		A02900000000000000010008 /* MovieMCPTools.swift in Sources */ = {isa = PBXBuildFile; fileRef = A02900000000000000000008 /* MovieMCPTools.swift */; };
+		A02900000000000000010009 /* TokenStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = A02900000000000000000009 /* TokenStore.swift */; };
+		A0290000000000000001000A /* AutomationBootstrap.swift in Sources */ = {isa = PBXBuildFile; fileRef = A0290000000000000000000A /* AutomationBootstrap.swift */; };
+        A02900000000000000040001 /* MCP in Frameworks */ = {isa = PBXBuildFile; productRef = A02900000000000000030001; };
+        A02900000000000000040002 /* NIOCore in Frameworks */ = {isa = PBXBuildFile; productRef = A02900000000000000030002; };
+        A02900000000000000040003 /* NIOPosix in Frameworks */ = {isa = PBXBuildFile; productRef = A02900000000000000030003; };
+        A02900000000000000040004 /* NIOHTTP1 in Frameworks */ = {isa = PBXBuildFile; productRef = A02900000000000000030004; };
+        A02900000000000000070001 /* Tests/ExportRegression.m in Sources */ = {isa = PBXBuildFile; fileRef = A02900000000000000060001; };
+        A02900000000000000070002 /* Tests/AutomationRegression.swift in Sources */ = {isa = PBXBuildFile; fileRef = A02900000000000000060002; };
+        A02900000000000000070003 /* Tests/FileAccessRegression.swift in Sources */ = {isa = PBXBuildFile; fileRef = A02900000000000000060003; };
+        A02900000000000000070004 /* Tests/MCPRegression.swift in Sources */ = {isa = PBXBuildFile; fileRef = A02900000000000000060004; };
+        A02900000000000000090002 /* ThirdPartyNotices.txt in Resources */ = {isa = PBXBuildFile; fileRef = A02900000000000000090001; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -60,6 +79,22 @@
 		A02700000000000000000003 /* VideoToolbox.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = VideoToolbox.framework; path = System/Library/Frameworks/VideoToolbox.framework; sourceTree = SDKROOT; };
 		A02700000000000000000004 /* MovieFrameRenderer.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = MovieFrameRenderer.m; sourceTree = "<group>"; };
 		A02700000000000000000005 /* MovieFrameRenderer.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = MovieFrameRenderer.h; sourceTree = "<group>"; };
+		A02900000000000000000001 /* ExportTypes.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExportTypes.swift; sourceTree = "<group>"; };
+		A02900000000000000000002 /* ExportCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExportCoordinator.swift; sourceTree = "<group>"; };
+		A02900000000000000000003 /* MovieIntents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MovieIntents.swift; sourceTree = "<group>"; };
+		A02900000000000000000004 /* FileAccessManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FileAccessManager.swift; sourceTree = "<group>"; };
+		A02900000000000000000005 /* AutomationSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AutomationSettings.swift; sourceTree = "<group>"; };
+		A02900000000000000000006 /* MCPHTTPServer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MCPHTTPServer.swift; sourceTree = "<group>"; };
+		A02900000000000000000007 /* MCPServerController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MCPServerController.swift; sourceTree = "<group>"; };
+		A02900000000000000000008 /* MovieMCPTools.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MovieMCPTools.swift; sourceTree = "<group>"; };
+		A02900000000000000000009 /* TokenStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TokenStore.swift; sourceTree = "<group>"; };
+		A0290000000000000000000A /* AutomationBootstrap.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AutomationBootstrap.swift; sourceTree = "<group>"; };
+        A02900000000000000060001 /* Tests/ExportRegression.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = Tests/ExportRegression.m; sourceTree = "<group>"; };
+        A02900000000000000060002 /* Tests/AutomationRegression.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Tests/AutomationRegression.swift; sourceTree = "<group>"; };
+        A02900000000000000060003 /* Tests/FileAccessRegression.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Tests/FileAccessRegression.swift; sourceTree = "<group>"; };
+        A02900000000000000080001 /* Image2MovieRegression */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; path = Image2MovieRegression; sourceTree = BUILT_PRODUCTS_DIR; };
+        A02900000000000000060004 /* Tests/MCPRegression.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Tests/MCPRegression.swift; sourceTree = "<group>"; };
+        A02900000000000000090001 /* ThirdPartyNotices.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = ThirdPartyNotices.txt; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -75,12 +110,65 @@
 				81C95AF71710E14F004D1D34 /* CoreVideo.framework in Frameworks */,
 				81C95AF51710E141004D1D34 /* AVFoundation.framework in Frameworks */,
 				8D11072F0486CEB800E47090 /* Cocoa.framework in Frameworks */,
+                A02900000000000000040001 /* MCP in Frameworks */,
+                A02900000000000000040002 /* NIOCore in Frameworks */,
+                A02900000000000000040003 /* NIOPosix in Frameworks */,
+                A02900000000000000040004 /* NIOHTTP1 in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+        A02900000000000000080004 = {
+            isa = PBXFrameworksBuildPhase;
+            buildActionMask = 2147483647;
+            files = (
+
+				A02700000000000000000011 /* CoreImage.framework in Frameworks */,
+				A02700000000000000000012 /* ImageIO.framework in Frameworks */,
+				A02700000000000000000013 /* VideoToolbox.framework in Frameworks */,
+				81C95AFB1710E15B004D1D34 /* UniformTypeIdentifiers.framework in Frameworks */,
+				81C95AF91710E15B004D1D34 /* CoreMedia.framework in Frameworks */,
+				81C95AF71710E14F004D1D34 /* CoreVideo.framework in Frameworks */,
+				81C95AF51710E141004D1D34 /* AVFoundation.framework in Frameworks */,
+				8D11072F0486CEB800E47090 /* Cocoa.framework in Frameworks */,
+                A02900000000000000040001 /* MCP in Frameworks */,
+                A02900000000000000040002 /* NIOCore in Frameworks */,
+                A02900000000000000040003 /* NIOPosix in Frameworks */,
+                A02900000000000000040004 /* NIOHTTP1 in Frameworks */,
+
+            );
+            runOnlyForDeploymentPostprocessing = 0;
+        };
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+        A02900000000000000080002 /* Regression Checks */ = {
+            isa = PBXGroup;
+            children = (
+                A02900000000000000060001,
+                A02900000000000000060002,
+                A02900000000000000060003,
+                A02900000000000000060004,
+            );
+            name = "Regression Checks";
+            sourceTree = "<group>";
+        };
+        A02900000000000000020001 /* Automation */ = {
+            isa = PBXGroup;
+            children = (
+				A02900000000000000000001 /* ExportTypes.swift */,
+				A02900000000000000000002 /* ExportCoordinator.swift */,
+				A02900000000000000000003 /* MovieIntents.swift */,
+				A02900000000000000000004 /* FileAccessManager.swift */,
+				A02900000000000000000005 /* AutomationSettings.swift */,
+				A02900000000000000000006 /* MCPHTTPServer.swift */,
+				A02900000000000000000007 /* MCPServerController.swift */,
+				A02900000000000000000008 /* MovieMCPTools.swift */,
+				A02900000000000000000009 /* TokenStore.swift */,
+				A0290000000000000000000A /* AutomationBootstrap.swift */,
+            );
+            name = Automation;
+            sourceTree = "<group>";
+        };
 		080E96DDFE201D6D7F000001 /* Classes */ = {
 			isa = PBXGroup;
 			children = (
@@ -118,6 +206,7 @@
 			isa = PBXGroup;
 			children = (
 				8D1107320486CEB800E47090 /* Image2Movie.app */,
+                A02900000000000000080001 /* Image2MovieRegression */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -129,6 +218,8 @@
 				81C95AF81710E15B004D1D34 /* CoreMedia.framework */,
 				81C95AF61710E14F004D1D34 /* CoreVideo.framework */,
 				81C95AF41710E141004D1D34 /* AVFoundation.framework */,
+				A02900000000000000020001 /* Automation */,
+                A02900000000000000080002 /* Regression Checks */,
 				080E96DDFE201D6D7F000001 /* Classes */,
 				29B97315FDCFA39411CA2CEA /* Other Sources */,
 				29B97317FDCFA39411CA2CEA /* Resources */,
@@ -151,6 +242,7 @@
 			isa = PBXGroup;
 			children = (
 				8D1107310486CEB800E47090 /* Info.plist */,
+                A02900000000000000090001 /* ThirdPartyNotices.txt */,
 				089C165CFE840E0CC02AAC07 /* InfoPlist.strings */,
 				29B97318FDCFA39411CA2CEA /* MainMenu.xib */,
 			);
@@ -208,17 +300,35 @@
 			);
 			name = Image2Movie;
 			productInstallPath = "$(HOME)/Applications";
+			packageProductDependencies = (
+                A02900000000000000030001 /* MCP */,
+                A02900000000000000030002 /* NIOCore */,
+                A02900000000000000030003 /* NIOPosix */,
+                A02900000000000000030004 /* NIOHTTP1 */,
+            );
 			productName = Image2Movie;
 			productReference = 8D1107320486CEB800E47090 /* Image2Movie.app */;
 			productType = "com.apple.product-type.application";
 		};
+        A02900000000000000080005 /* Image2MovieRegression */ = {
+            isa = PBXNativeTarget;
+            buildConfigurationList = A02900000000000000080006;
+            buildPhases = (A02900000000000000080003, A02900000000000000080004,);
+            buildRules = ();
+            dependencies = ();
+            name = Image2MovieRegression;
+            productName = Image2MovieRegression;
+            productReference = A02900000000000000080001;
+            productType = "com.apple.product-type.tool";
+            packageProductDependencies = (A02900000000000000030001,A02900000000000000030002,A02900000000000000030003,A02900000000000000030004,);
+        };
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
 		29B97313FDCFA39411CA2CEA /* Project object */ = {
 			isa = PBXProject;
 			attributes = {
-				LastUpgradeCheck = 0720;
+				LastUpgradeCheck = 2700;
 				TargetAttributes = {
 					8D1107260486CEB800E47090 = {
 						DevelopmentTeam = BWNJC57N56;
@@ -226,7 +336,7 @@
 				};
 			};
 			buildConfigurationList = C01FCF4E08A954540054247B /* Build configuration list for PBXProject "Image2Movie" */;
-			compatibilityVersion = "Xcode 3.2";
+			compatibilityVersion = "Xcode 14.0";
 			developmentRegion = English;
 			hasScannedForEncodings = 1;
 			knownRegions = (
@@ -236,8 +346,13 @@
 			mainGroup = 29B97314FDCFA39411CA2CEA /* Image2Movie */;
 			projectDirPath = "";
 			projectRoot = "";
+            packageReferences = (
+                A02900000000000000050001,
+                A02900000000000000050002,
+            );
 			targets = (
 				8D1107260486CEB800E47090 /* Image2Movie */,
+                A02900000000000000080005 /* Image2MovieRegression */,
 			);
 		};
 /* End PBXProject section */
@@ -248,6 +363,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				8D11072A0486CEB800E47090 /* MainMenu.xib in Resources */,
+                A02900000000000000090002 /* ThirdPartyNotices.txt in Resources */,
 				8D11072B0486CEB800E47090 /* InfoPlist.strings in Resources */,
 				814F4A451463070000CA0F3B /* PrimaryWindow.xib in Resources */,
 				8129016417188C700024DED8 /* Image2MovieIcon.iconset in Resources */,
@@ -261,6 +377,16 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+								A02900000000000000010001 /* ExportTypes.swift in Sources */,
+				A02900000000000000010002 /* ExportCoordinator.swift in Sources */,
+				A02900000000000000010003 /* MovieIntents.swift in Sources */,
+				A02900000000000000010004 /* FileAccessManager.swift in Sources */,
+				A02900000000000000010005 /* AutomationSettings.swift in Sources */,
+				A02900000000000000010006 /* MCPHTTPServer.swift in Sources */,
+				A02900000000000000010007 /* MCPServerController.swift in Sources */,
+				A02900000000000000010008 /* MovieMCPTools.swift in Sources */,
+				A02900000000000000010009 /* TokenStore.swift in Sources */,
+				A0290000000000000001000A /* AutomationBootstrap.swift in Sources */,
 				8D11072D0486CEB800E47090 /* main.m in Sources */,
 				8151904B1187766300808105 /* AppController.m in Sources */,
 				814F4A43146306EB00CA0F3B /* PrimaryWindowController.m in Sources */,
@@ -271,6 +397,35 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+        A02900000000000000080003 = {
+            isa = PBXSourcesBuildPhase;
+            buildActionMask = 2147483647;
+            files = (
+
+								A02900000000000000010001 /* ExportTypes.swift in Sources */,
+				A02900000000000000010002 /* ExportCoordinator.swift in Sources */,
+				A02900000000000000010003 /* MovieIntents.swift in Sources */,
+				A02900000000000000010004 /* FileAccessManager.swift in Sources */,
+				A02900000000000000010005 /* AutomationSettings.swift in Sources */,
+				A02900000000000000010006 /* MCPHTTPServer.swift in Sources */,
+				A02900000000000000010007 /* MCPServerController.swift in Sources */,
+				A02900000000000000010008 /* MovieMCPTools.swift in Sources */,
+				A02900000000000000010009 /* TokenStore.swift in Sources */,
+				A0290000000000000001000A /* AutomationBootstrap.swift in Sources */,
+				8151904B1187766300808105 /* AppController.m in Sources */,
+				814F4A43146306EB00CA0F3B /* PrimaryWindowController.m in Sources */,
+				A02700000000000000000014 /* MovieFrameRenderer.m in Sources */,
+				814F4A4E146319E200CA0F3B /* ImagesToMovie.m in Sources */,
+				814F4A5514632B0200CA0F3B /* ImagesToMovieController.m in Sources */,
+				814F4A5B14633C8C00CA0F3B /* ImageTableController.m in Sources */,
+
+                A02900000000000000070001,
+                A02900000000000000070002,
+                A02900000000000000070003,
+                A02900000000000000070004,
+            );
+            runOnlyForDeploymentPostprocessing = 0;
+        };
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXVariantGroup section */
@@ -292,6 +447,17 @@
 		};
 /* End PBXVariantGroup section */
 
+/* Begin XCRemoteSwiftPackageReference section */
+        A02900000000000000050001 = {isa = XCRemoteSwiftPackageReference; repositoryURL = "https://github.com/modelcontextprotocol/swift-sdk"; requirement = {kind = exactVersion; version = 0.12.1; }; };
+        A02900000000000000050002 = {isa = XCRemoteSwiftPackageReference; repositoryURL = "https://github.com/apple/swift-nio"; requirement = {kind = exactVersion; version = 2.103.0; }; };
+/* End XCRemoteSwiftPackageReference section */
+/* Begin XCSwiftPackageProductDependency section */
+        A02900000000000000030001 /* MCP */ = {isa = XCSwiftPackageProductDependency; package = A02900000000000000050001; productName = MCP; };
+        A02900000000000000030002 /* NIOCore */ = {isa = XCSwiftPackageProductDependency; package = A02900000000000000050002; productName = NIOCore; };
+        A02900000000000000030003 /* NIOPosix */ = {isa = XCSwiftPackageProductDependency; package = A02900000000000000050002; productName = NIOPosix; };
+        A02900000000000000030004 /* NIOHTTP1 */ = {isa = XCSwiftPackageProductDependency; package = A02900000000000000050002; productName = NIOHTTP1; };
+/* End XCSwiftPackageProductDependency section */
+
 /* Begin XCBuildConfiguration section */
 		C01FCF4B08A954540054247B /* Debug */ = {
 			isa = XCBuildConfiguration;
@@ -308,8 +474,18 @@
 				INFOPLIST_FILE = Info.plist;
 				INSTALL_PATH = "$(HOME)/Applications";
 				MACOSX_DEPLOYMENT_TARGET = 27.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.EarlyInnovations.Image2Movie;
+				CODE_SIGN_ENTITLEMENTS = Image2Movie.entitlements;
+                CODE_SIGN_IDENTITY = "Apple Development";
+                CODE_SIGN_STYLE = Manual;
+                DEVELOPMENT_TEAM = BWNJC57N56;
+                ENABLE_APP_SANDBOX = YES;
+                ENABLE_HARDENED_RUNTIME = YES;
+                PRODUCT_BUNDLE_IDENTIFIER = com.EarlyInnovations.Image2Movie;
 				PRODUCT_NAME = Image2Movie;
+                SWIFT_VERSION = 6.0;
+                SWIFT_OBJC_BRIDGING_HEADER = "Image2Movie-Bridging-Header.h";
+                SWIFT_OBJC_INTERFACE_HEADER_NAME = "Image2Movie-Swift.h";
+                SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 				WRAPPER_EXTENSION = app;
 			};
 			name = Debug;
@@ -318,6 +494,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
+				CODE_SIGN_INJECT_BASE_ENTITLEMENTS = NO;
 				ARCHS = arm64;
 				CLANG_ENABLE_OBJC_ARC = YES;
 				COMBINE_HIDPI_IMAGES = YES;
@@ -327,8 +504,18 @@
 				INFOPLIST_FILE = Info.plist;
 				INSTALL_PATH = "$(HOME)/Applications";
 				MACOSX_DEPLOYMENT_TARGET = 27.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.EarlyInnovations.Image2Movie;
+				CODE_SIGN_ENTITLEMENTS = Image2Movie.entitlements;
+                CODE_SIGN_IDENTITY = "Apple Development";
+                CODE_SIGN_STYLE = Manual;
+                DEVELOPMENT_TEAM = BWNJC57N56;
+                ENABLE_APP_SANDBOX = YES;
+                ENABLE_HARDENED_RUNTIME = YES;
+                PRODUCT_BUNDLE_IDENTIFIER = com.EarlyInnovations.Image2Movie;
 				PRODUCT_NAME = Image2Movie;
+                SWIFT_VERSION = 6.0;
+                SWIFT_OBJC_BRIDGING_HEADER = "Image2Movie-Bridging-Header.h";
+                SWIFT_OBJC_INTERFACE_HEADER_NAME = "Image2Movie-Swift.h";
+                SWIFT_OPTIMIZATION_LEVEL = "-O";
 				WRAPPER_EXTENSION = app;
 			};
 			name = Release;
@@ -359,6 +546,44 @@
 			};
 			name = Release;
 		};
+        A02900000000000000080007 /* Debug */ = {
+            isa = XCBuildConfiguration;
+            buildSettings = {
+                ARCHS = arm64;
+                CLANG_ENABLE_OBJC_ARC = YES;
+                CODE_SIGNING_ALLOWED = NO;
+                GCC_PREFIX_HEADER = Image2Movie_Prefix.pch;
+                HEADER_SEARCH_PATHS = "$(SRCROOT)";
+                MACOSX_DEPLOYMENT_TARGET = 27.0;
+                PRODUCT_NAME = Image2MovieRegression;
+                PRODUCT_MODULE_NAME = Image2MovieRegression;
+                SWIFT_VERSION = 6.0;
+                SWIFT_OBJC_BRIDGING_HEADER = "Image2Movie-Bridging-Header.h";
+                SWIFT_OBJC_INTERFACE_HEADER_NAME = "Image2Movie-Swift.h";
+                SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+                SWIFT_ACTIVE_COMPILATION_CONDITIONS = REGRESSION_TESTS;
+            };
+            name = Debug;
+        };
+        A02900000000000000080008 /* Release */ = {
+            isa = XCBuildConfiguration;
+            buildSettings = {
+                ARCHS = arm64;
+                CLANG_ENABLE_OBJC_ARC = YES;
+                CODE_SIGNING_ALLOWED = NO;
+                GCC_PREFIX_HEADER = Image2Movie_Prefix.pch;
+                HEADER_SEARCH_PATHS = "$(SRCROOT)";
+                MACOSX_DEPLOYMENT_TARGET = 27.0;
+                PRODUCT_NAME = Image2MovieRegression;
+                PRODUCT_MODULE_NAME = Image2MovieRegression;
+                SWIFT_VERSION = 6.0;
+                SWIFT_OBJC_BRIDGING_HEADER = "Image2Movie-Bridging-Header.h";
+                SWIFT_OBJC_INTERFACE_HEADER_NAME = "Image2Movie-Swift.h";
+                SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+                SWIFT_ACTIVE_COMPILATION_CONDITIONS = REGRESSION_TESTS;
+            };
+            name = Release;
+        };
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -380,6 +605,12 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
+        A02900000000000000080006 = {
+            isa = XCConfigurationList;
+            buildConfigurations = (A02900000000000000080007, A02900000000000000080008,);
+            defaultConfigurationIsVisible = 0;
+            defaultConfigurationName = Debug;
+        };
 /* End XCConfigurationList section */
 	};
 	rootObject = 29B97313FDCFA39411CA2CEA /* Project object */;

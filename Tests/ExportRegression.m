@@ -8,6 +8,7 @@
 #import <VideoToolbox/VideoToolbox.h>
 #import "ImagesToMovieController.h"
 #import "PrimaryWindowController.h"
+#import "Image2Movie-Swift.h"
 
 // Keep preference tests, including a fresh process, away from the user's defaults.
 static NSUserDefaults *testDefaults;
@@ -794,6 +795,28 @@ static void CancelDuringFinish(NSArray *paths, NSString *output, AVVideoCodecTyp
 
 #include "PrecisionChecks.inc"
 
+static void DestinationCreatedDuringFinish(NSArray *paths, NSString *directory, AVVideoCodecType codec)
+{
+    NSString *path = [directory stringByAppendingPathComponent:[NSString stringWithFormat:@"race-%@.%@", codec,
+        [codec isEqual:AVVideoCodecTypeAppleProRes422] ? @"mov" : @"mp4"]];
+    NSData *sentinel = [@"Created by another writer during encoding" dataUsingEncoding:NSUTF8StringEncoding];
+    Method original = class_getInstanceMethod(AVAssetWriter.class, @selector(finishWritingWithCompletionHandler:));
+    Method replacement = class_getInstanceMethod(AVAssetWriter.class, @selector(regressionFinish:));
+    method_exchangeImplementations(original, replacement);
+    ImagesToMovie *model = Model(paths);
+    model.codec = codec;
+    model.allowOverwrite = NO;
+    finishHook = ^{
+        Check([sentinel writeToFile:path atomically:YES], @"Create competing destination after encoding");
+        delayedFinishCompletion();
+        delayedFinishCompletion = nil;
+    };
+    NSError *error = Export(model, path, nil, nil);
+    method_exchangeImplementations(original, replacement);
+    Check(error && [[NSData dataWithContentsOfFile:path] isEqual:sentinel], @"No-overwrite protects a destination created during encoding");
+    NSLog(@"PASS: %@ no-overwrite publication race", codec);
+}
+
 int main(int argc, const char *argv[])
 {
     @autoreleasepool {
@@ -861,6 +884,8 @@ int main(int argc, const char *argv[])
         [@"keep" writeToFile:marker atomically:YES encoding:NSUTF8StringEncoding error:NULL];
         Check(Export(Model(paths), unwritable, nil, nil) != nil && [[NSFileManager defaultManager] fileExistsAtPath:marker], @"Promotion failure preserves destination");
         NSLog(@"PASS: invalid settings, unreadable frames, cancellation and destination preservation");
+        for (AVVideoCodecType codec in @[AVVideoCodecTypeH264, AVVideoCodecTypeHEVC, AVVideoCodecTypeAppleProRes422])
+            DestinationCreatedDuringFinish(paths, directory, codec);
 
         ImagesToMovie *model = Model(paths);
         NSError *snapshotError = Export(model, output, ^{ model.imagePaths = [@[bad] mutableCopy]; model.frameRate = 0; }, nil);
@@ -937,6 +962,13 @@ int main(int argc, const char *argv[])
         QualityComparisons(directory);
         ControllerChecks(paths, large, dpi, pdf, truncated);
         AppKitChecks([NSString stringWithUTF8String:argv[2]], directory, paths, pdf, large);
+        __block BOOL automationDone = NO;
+        __block NSError *automationError = nil;
+        [AutomationRegression runInDirectory:[NSURL fileURLWithPath:directory isDirectory:YES]
+            completion:^(NSError *error) { automationError = error; automationDone = YES; }];
+        WaitFor(^BOOL { return automationDone; });
+        Check(!automationError, [NSString stringWithFormat:@"Swift automation checks: %@", automationError]);
+        NSLog(@"PASS: Swift export coordination and file-access checks");
         for (NSString *name in [[NSFileManager defaultManager] contentsOfDirectoryAtPath:directory error:NULL])
             Check(![name hasPrefix:@"."], [NSString stringWithFormat:@"Temporary output leaked: %@", name]);
         NSLog(@"PASS: all regressions (%@)", directory);

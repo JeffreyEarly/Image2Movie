@@ -7,6 +7,7 @@
 //
 
 #import "AppController.h"
+#import "Image2Movie-Swift.h"
 
 @implementation AppController
 
@@ -21,6 +22,26 @@
 {
 	self.windowController = [[PrimaryWindowController alloc] initWithWindowNibName: @"PrimaryWindow"];
 	[self.windowController showWindow: self];
+    [AutomationBootstrap finishLaunching];
+}
+
+- (IBAction)showAutomationSettings:(id)sender
+{
+    [[AutomationSettingsController shared] showWindow:sender];
+}
+
+- (NSApplicationTerminateReply)applicationShouldTerminate:(NSApplication *)sender
+{
+    ExportCoordinator *coordinator = [ExportCoordinator shared];
+    if (!coordinator.hasActiveExport) return NSTerminateNow;
+    NSAlert *alert = [[NSAlert alloc] init];
+    alert.messageText = @"Cancel the export and quit?";
+    alert.informativeText = @"The current export will be cancelled before Image2Movie quits. Any previous movie will be preserved.";
+    [alert addButtonWithTitle:@"Keep Exporting"];
+    [alert addButtonWithTitle:@"Cancel Export and Quit"];
+    if ([alert runModal] != NSAlertSecondButtonReturn) return NSTerminateCancel;
+    [coordinator prepareForTerminationWithCompletion:^{ [sender replyToApplicationShouldTerminate:YES]; }];
+    return NSTerminateLater;
 }
 
 @end

@@ -5,11 +5,22 @@ import UniformTypeIdentifiers
 
 @MainActor
 enum MovieMCPTools {
-    static func register(on server: Server) async {
+    static func register(on server: Server,
+                         isActive: @escaping @Sendable () -> Bool = { true }) async {
         let tools = definitions
-        await server.withMethodHandler(ListTools.self) { _ in .init(tools: tools) }
+        await server.withMethodHandler(ListTools.self) { _ in
+            .init(tools: isActive() ? tools : [])
+        }
         await server.withMethodHandler(CallTool.self) { parameters in
-            await MainActor.run { call(parameters) }
+            await MainActor.run {
+                guard isActive() else {
+                    return result(.object(["error": .object([
+                        "code": .string("session_closed"),
+                        "message": .string("This MCP connection has closed.")
+                    ])]), isError: true)
+                }
+                return call(parameters)
+            }
         }
     }
 

@@ -44,31 +44,30 @@ private struct AutomationSettingsView: View {
 
             Divider()
             HStack {
-                Text("MCP server").font(.headline)
+                Toggle("Allow AI tools to use Image2Movie", isOn: Binding(
+                    get: { server.isEnabled },
+                    set: { enabled in
+                        Task {
+                            await performServerAction {
+                                if enabled { try await server.start() } else { await server.stop() }
+                            }
+                        }
+                    }
+                ))
+                .disabled(server.isTransitioning)
                 Spacer()
                 Text(server.status).foregroundStyle(.secondary)
             }
-            Text(server.endpoint).font(.system(.caption, design: .monospaced)).textSelection(.enabled)
             Text("Active connections: \(server.activeConnections)")
                 .font(.caption).foregroundStyle(.secondary)
-            HStack {
-                Button(server.isEnabled ? "Stop Server" : "Start Server") {
-                    Task { await performServerAction { if server.isEnabled { await server.stop() } else { try await server.start() } } }
-                }
-                Button("Rotate Token") {
-                    Task { await performServerAction { try await server.rotateToken() } }
-                }
-                Button("Copy Token") {
-                    do { try server.copyToken() }
-                    catch { errorMessage = error.localizedDescription }
-                }
-                Button("Copy Codex Configuration") {
-                    NSPasteboard.general.clearContents()
-                    NSPasteboard.general.setString(server.codexConfiguration, forType: .string)
-                }
+            Button("Copy Codex Configuration") {
+                NSPasteboard.general.clearContents()
+                NSPasteboard.general.setString(server.codexConfiguration, forType: .string)
             }
-            .disabled(server.isTransitioning)
-            Text("Set IMAGE2MOVIE_MCP_TOKEN in the environment used to launch Codex. Restart the client after changing its token.")
+            Text("This allows local tools using the bundled bridge to use your authorized folders. It does not authenticate Codex specifically.")
+                .font(.caption).foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+            Text("Keep Image2Movie open while connected. Reconnect after restarting the app, and copy the configuration again if the app moves.")
                 .font(.caption).foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
             Spacer(minLength: 0)

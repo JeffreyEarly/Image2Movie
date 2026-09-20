@@ -9,6 +9,7 @@ final class AutomationRegression: NSObject {
             do {
                 try runFileAccessRegression(inDirectory: directory)
                 try await exerciseCoordinator(in: directory)
+                try runMCPSettingsRegression()
                 try await runMCPRegression(inDirectory: directory)
                 completion(nil)
             } catch {

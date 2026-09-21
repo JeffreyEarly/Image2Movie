@@ -150,17 +150,16 @@ quitting the stale copy and registering/relaunching the current build resolved i
 ## Remaining acceptance checks
 
 - Exercise long native Shortcut exports and cancellation from Shortcuts itself.
-- Complete the remaining signed bridge lifecycle checks: Debug runtime, two app
-  copies, restart/update, production-listener unauthorized peers, incompatible
-  versions, app quitting, and stale socket cleanup. Release sessions, protocol
-  bounds, disconnect/reconnect, disable during export, and bridge termination pass.
+- Complete app-update and production-listener unauthorized-peer checks. Debug
+  runtime, exact-copy launch, incompatible versions, app quitting, and stale
+  socket recovery have additional coverage in the automatic-launch checks below.
 - Complete Codex onboarding checks for installed/Xcode paths and moved app
   copies. The configured Release copy's desktop export and cancellation pass.
 - Test a fresh sandbox container and revoked/stale authorization in the signed
   application. Test external-volume output when a writable external volume is
   available; none was mounted during this pass.
 
-For a running signed app with AI-tool access enabled, use:
+For a signed app with AI-tool access already enabled, use:
 
 ```sh
 python3 Tests/run-stdio-client-check.py /path/to/Image2Movie.app/Contents/MacOS/image2movie-mcp
@@ -176,3 +175,90 @@ the production signed Release app.
 
 The standalone harness does not replace these checks. Keep the milestone open
 until its signed-app and real-client acceptance criteria pass.
+
+## Automatic background launch (September 20)
+
+The production bridge now starts its exact containing app when needed. Both
+signed builds and static analysis pass; strict nested signature and entitlement
+checks confirm that no additional sandbox entitlement was introduced. The full
+export/UI/coordinator/MCP regression suite passes after the lifecycle changes.
+
+### Signed feasibility and platform adaptation
+
+The macOS 27 SDK documents that sandboxed callers cannot pass
+`NSWorkspace.OpenConfiguration.arguments`. A signed experiment confirmed this.
+The startup hint instead uses the standard open-application Apple event, a
+private `I2MA` boolean, and `keyAERestoreAppState = kAENo`. This passes through
+Launch Services with the existing entitlements; the optional command-line flag
+is retained for direct developer launches. Neither hint grants automation or
+file access.
+
+`Tests/run-signed-launch-check.py` runs the production bridge against temporary
+signed sandboxed apps with production identity and socket helpers. It verifies:
+
+- Four simultaneous cold connections select one process; a warm connection
+  reuses it. A second containing app gets its own process. Paths contain spaces.
+  Launch and connection do not activate the app or change the foreground app.
+- The startup hint and restoration suppression arrive correctly. An established
+  connection remains usable beyond eight seconds, proving the startup watchdog
+  does not terminate healthy sessions.
+- Killing an app ends an attached bridge without relaunching. A fresh bridge
+  starts it again and recovers its stale socket.
+- Disabled access, slow startup, and slow handshake fail with exit status 1,
+  empty stdout, and an actionable deadline diagnostic. Release wall times were
+  8.20, 8.22, and 8.18 seconds, including process-spawn overhead outside the
+  bridge's eight-second monotonic deadline. Version and signature failures were
+  immediate (0.47 and 0.09 seconds).
+
+The existing signed authentication proof separately rejects unsigned same-user
+clients, rogue servers, and another installation's signed helper. These fixture
+checks are distinguished from the production-app checks below.
+
+### Actual application and Codex client
+
+- Production Debug and Release bridges cold-start their respective apps and pass
+  six-tool discovery, overlapping sessions, malformed/oversized message rejection,
+  connection limits, slot cleanup, and reconnect. Release also passes sequence
+  inspection, completed export, bridge EOF/termination during export, cancellation,
+  and exact destination-byte preservation. Another Xcode copy remained running
+  during these tests; it was not substituted for the configured app.
+- The desktop-bundled Codex MCP client, using the existing configured Release
+  helper in an ephemeral app-server diagnostic session, cold-started the app and
+  discovered all six tools in 0.95 seconds. It inspected the authorized sequence,
+  exported HEVC, polled completion, then cancelled a 2,000-frame UHD overwrite and
+  verified unchanged destination bytes. The completed movie decoded to three
+  320 × 180 HEVC frames and 0.1 seconds. No Codex configuration was changed. This
+  cold-start run used the actual desktop client implementation; direct tools in
+  the existing conversation were verified earlier with an already-running app.
+- The built window regression verifies that loading its nib does not display it.
+  The nib needed `visibleAtLaunch=NO` in addition to skipping `showWindow:`.
+  Reopening the real Release app during a 5,000-frame UHD automation job showed
+  current progress and an enabled Cancel button. Clicking Cancel preserved the
+  existing destination exactly. Ordinary visible startup and app reopening keep
+  the existing controller. A literal Dock-icon click remains a manual spot check.
+- Turning AI access off left it off, showed no authorization dialog, and made the
+  production bridge fail in 8.02 seconds with empty stdout and an Automation
+  Settings instruction. Explicit enablement was restored after testing; existing
+  folder grants were unchanged.
+- Deliberate Quit during another 5,000-frame UHD job displayed the existing
+  cancellation confirmation. **Cancel Export and Quit** preserved the destination
+  and ended the bridge. A fresh connection subsequently launched the app and
+  completed the full live Release client checks. Closing a window leaves the app
+  running; disconnecting clients also leaves it running.
+- A closed-app native Shortcuts invocation launched the current signed Debug app
+  and completed a one-frame 320 × 180 ProRes export, confirmed through that app's
+  coordinator status. The `shortcuts run` command did not return within 35 seconds
+  and was stopped after the movie completed. Native startup/export therefore has
+  fresh evidence, but this invocation does not establish completed file handoff
+  or native cancellation; retain those broader Shortcuts checks separately.
+
+An independent GPT-6 Astra review found a Swift concurrency isolation problem in
+the timeout handler: a closure inherited main-actor isolation but ran on a global
+dispatch queue. The watchdog factory is now nonisolated and its handler explicitly
+`@Sendable`. Signed timeout tests verify clean errors instead of a runtime trap.
+After the fixes and additional lifetime tests, the reviewer found no remaining
+actionable production issue.
+
+This evidence uses Early Innovations **Apple Development** signing on macOS 27
+and Apple silicon. It does not establish App Store distribution signing or review
+approval. The remaining milestone checks listed above are still open.

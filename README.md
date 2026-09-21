@@ -107,7 +107,11 @@ authorize the files you select.
 The native **Export Movie**, **Get Export Status**, and **Cancel Export** actions
 are available through App Intents. Enable **Allow AI tools to use Image2Movie**
 to connect Codex through the signed `image2movie-mcp` executable bundled with the
-app. Access is disabled by default; Image2Movie must be open. The bridge uses
+app. Access is disabled by default. After initial setup, the bridge starts its
+containing app in the background when Codex connects, without showing a movie
+window or taking focus. Image2Movie stays in the Dock until you quit it, including
+after clients disconnect. Click its Dock icon to see progress or cancel an export.
+A fresh connection can launch it again after Quit. The bridge uses
 stdio and a private App Group socket, with no TCP listener or bearer token. See [Automation.md](Automation.md) for Shortcuts examples,
 Codex setup, request formats, and troubleshooting.
 

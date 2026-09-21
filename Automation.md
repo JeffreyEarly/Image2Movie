@@ -50,14 +50,15 @@ and wait for temporary-output cleanup.
 
 ## Connect an MCP client
 
-1. Install and open Image2Movie. A signed Xcode Debug build also works; keep that
-   particular copy open while testing.
+1. Install and open Image2Movie for initial setup. A signed Xcode Debug build also
+   works; configure the bridge bundled in that particular copy.
 2. In Automation Settings, enable **Allow AI tools to use Image2Movie**.
 3. Authorize input and output folders.
 4. Choose **Copy Codex Configuration** and add the copied block to your Codex
    configuration. Codex supports command-based STDIO servers in `config.toml`;
    see the [official MCP setup documentation](https://developers.openai.com/codex/mcp).
-5. Quit and reopen Codex while Image2Movie stays open, then request an export.
+5. Reconnect Codex (or quit and reopen it), then request an export. Image2Movie
+   does not need to be open after initial setup: the bridge starts it when needed.
 
 You can also use **Codex → Settings → MCP servers → Add server**. Name it
 `image2movie`, choose **STDIO**, and put the executable path from the copied
@@ -77,7 +78,20 @@ The app generates the actual path, including TOML escaping. Image2Movie never
 edits Codex settings. If the app moves, copy its configuration again. After
 restarting or updating Image2Movie, reconnect the client.
 
-Codex launches the bundled executable automatically. It relays standard MCP
+Codex launches the bundled executable automatically. If its containing app is
+closed, the bridge starts that exact signed copy in the background. It waits up
+to eight seconds for an authenticated connection, without opening a movie window
+or taking focus. An already-running app keeps its current window state. Codex may
+connect when loading tools, before your first export request.
+
+Image2Movie remains running in the Dock until you quit it, even after clients
+disconnect. Click its Dock icon to show the existing window, inspect progress,
+or cancel an export. Quitting during an export retains the normal cancellation
+confirmation. Existing bridge sessions exit when the app exits; they do not
+relaunch it or replay requests. A fresh connection can start it again. Recent
+jobs remain available while the app runs and are cleared on app relaunch.
+
+The bridge relays standard MCP
 messages over stdin/stdout to a private Unix-domain socket in the shared App
 Group. The app and bridge verify the same user, Early Innovations code signatures,
 and the containing app installation before exchanging MCP messages. A bridge
@@ -89,8 +103,10 @@ no folder grants. All file authorization and exports remain in the main app.
 
 Access is disabled by default and remembered after explicit enablement. Disabling
 it closes connections; accepted exports continue and remain visible and
-cancellable in Image2Movie. The app must already be open. There is no TCP
-listener, bearer token, additional installation, login item, or automatic launch.
+cancellable in Image2Movie. Automatic launch never enables access or authorizes
+folders. When access is disabled, a connection may start the app quietly but will
+fail within the startup deadline; open Automation Settings to enable it. There is
+no TCP listener, bearer token, additional installation, or login item.
 
 This stdio design supersedes the earlier HTTP prototype. Its old enablement
 preference and app-owned Keychain token are removed without carrying enablement
@@ -138,8 +154,10 @@ jobs. After reconnecting, poll the same job identifier.
 - **Folder unavailable:** reconnect the drive and reauthorize the folder. A path
   string from another program cannot grant sandbox access.
 - **Destination exists:** choose a new filename or explicitly enable overwrite.
-- **Cannot connect:** open the same app copy named in the configuration and enable
-  AI-tool access. Reconnect after starting the app or changing that setting.
+- **Startup timeout:** the bridge could not establish a connection within eight
+  seconds. Open the same app copy named in the configuration, check Automation
+  Settings and AI-tool access, then reconnect. It will not automatically enable
+  access, grant folders, or repeatedly restart a failing app.
 - **Peer verification failed:** use the executable inside the signed app bundle.
   Rebuild/reinstall both pieces together; do not copy the helper out of the app.
 - **Version mismatch:** update the app and use its bundled bridge, then reconnect.
@@ -148,6 +166,21 @@ jobs. After reconnecting, poll the same job identifier.
   20 terminal jobs are kept. Relaunching clears that history.
 
 ## Development checks
+
+The sandboxed bridge uses a standard open-application Apple event containing a
+private `I2MA` display hint and `keyAERestoreAppState = kAENo`. macOS discards
+`NSWorkspace` launch arguments from sandboxed callers, so the originally planned
+command-line flag cannot carry the production startup hint. The direct
+`--image2movie-automation-launch` argument remains available for development.
+Neither mechanism grants access; the main app's existing preference remains the
+authority. No extra Apple Events or other sandbox entitlement is required.
+
+Run `python3 Tests/run-signed-launch-check.py /path/to/image2movie-mcp` to exercise
+the production bridge against temporary signed sandbox fixtures: background
+launch, concurrent starts, exact-copy selection, crash/relaunch, disabled access,
+slow startup/handshake, invalid signatures, and incompatible versions. The test
+needs an unlocked session and an Early Innovations signing identity. It does not
+change user preferences, folder grants, or Codex settings.
 
 Run `bash Tests/run-regressions.sh` for the export/UI harness and native Swift/MCP
 checks. The command generates temporary fixtures and does not use your image

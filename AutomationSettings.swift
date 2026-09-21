@@ -67,7 +67,7 @@ private struct AutomationSettingsView: View {
             Text("This allows local tools using the bundled bridge to use your authorized folders. It does not authenticate Codex specifically.")
                 .font(.caption).foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
-            Text("Keep Image2Movie open while connected. Reconnect after restarting the app, and copy the configuration again if the app moves.")
+            Text("Codex can start Image2Movie in the background when it loads its tools. Image2Movie stays running in the Dock until you quit it, including after clients disconnect, and a fresh connection can open it again after Quit. AI access and folder authorization are still required. If you move the app, copy the configuration again.")
                 .font(.caption).foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
             Spacer(minLength: 0)

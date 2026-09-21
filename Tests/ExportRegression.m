@@ -327,6 +327,7 @@ static void AppKitChecks(NSString *bundlePath, NSString *directory, NSArray *pat
     NSArray *objects;
     Check([[[NSNib alloc] initWithNibNamed:@"PrimaryWindow" bundle:bundle] instantiateWithOwner:window topLevelObjects:&objects], @"Load built primary window");
     [window windowDidLoad];
+    Check(!window.window.isVisible, @"Loading the movie window does not display it before an explicit show");
     [window.window makeKeyAndOrderFront:nil];
     ImageTableController *list = window.imageTableController;
     NSTableView *table = list.imageTable;

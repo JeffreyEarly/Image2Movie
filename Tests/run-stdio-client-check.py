@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
-"""Exercise a running Image2Movie app through its bundled MCP stdio helper.
+"""Exercise Image2Movie through its bundled MCP stdio helper.
 
-The app must already be open with “Allow AI tools to use Image2Movie” enabled.
+“Allow AI tools to use Image2Movie” must already be enabled. The bridge launches
+its containing app in the background when needed.
 This script does not change app settings, grants, or Codex configuration.
 """
 

@@ -70,10 +70,12 @@ drag image files from Finder into the image list or choose **File → Add Images
 **File → Export Movie…** (⌘S). The Save dialog uses the codec's MP4 or MOV extension.
 During export, the button becomes **Cancel**; the Export menu command is disabled.
 
-The project uses Early Innovations' development team (`BWNJC57N56`) and an Apple
-Development signing identity. Xcode resolves the pinned packages on the first
-build. An unsigned compile can use `CODE_SIGNING_ALLOWED=NO`, but sandbox,
-bookmark, Keychain, and App Intents checks require the signed application.
+The project uses automatic signing with Early Innovations' team (`BWNJC57N56`).
+Normal builds use Apple Development signing; App Store exports use distribution
+signing. See [Distribution/README.md](Distribution/README.md) for version settings,
+archive/export commands, and validation results. Xcode resolves the pinned
+packages on the first build. An unsigned compile can use `CODE_SIGNING_ALLOWED=NO`,
+but sandbox, bookmark, Keychain, and App Intents checks require the signed app.
 
 Imports append supported, readable image files in the supplied order, including
 duplicates. Folders, unsupported files, and missing or unreadable files are

@@ -9,9 +9,9 @@
 	<key>CFBundleName</key>
 	<string>image2movie-mcp</string>
 	<key>CFBundleVersion</key>
-	<string>1</string>
+	<string>$(CURRENT_PROJECT_VERSION)</string>
 	<key>CFBundleShortVersionString</key>
-	<string>1.0</string>
+	<string>$(MARKETING_VERSION)</string>
 	<key>CFBundlePackageType</key>
 	<string>BNDL</string>
 </dict>

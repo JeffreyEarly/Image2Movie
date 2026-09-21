@@ -14,6 +14,39 @@
 		814F4A5514632B0200CA0F3B /* ImagesToMovieController.m in Sources */ = {isa = PBXBuildFile; fileRef = 814F4A5414632B0200CA0F3B /* ImagesToMovieController.m */; };
 		814F4A5B14633C8C00CA0F3B /* ImageTableController.m in Sources */ = {isa = PBXBuildFile; fileRef = 814F4A5A14633C8C00CA0F3B /* ImageTableController.m */; };
 		8151904B1187766300808105 /* AppController.m in Sources */ = {isa = PBXBuildFile; fileRef = 8151904A1187766300808105 /* AppController.m */; };
+		81855C7730616162008366B7 /* MCPPeerIdentity.swift in Sources */ = {isa = PBXBuildFile; fileRef = A03000000000000000000001 /* MCPPeerIdentity.swift */; };
+		81855C7830616162008366B7 /* MCPUnixSocket.swift in Sources */ = {isa = PBXBuildFile; fileRef = A03000000000000000000002 /* MCPUnixSocket.swift */; };
+		81855C7930616162008366B7 /* MCPLaunchRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = A03100000000000000000001 /* MCPLaunchRequest.swift */; };
+		81855C7A30616162008366B7 /* ExportTypes.swift in Sources */ = {isa = PBXBuildFile; fileRef = A02900000000000000000001 /* ExportTypes.swift */; };
+		81855C7B30616162008366B7 /* ExportCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = A02900000000000000000002 /* ExportCoordinator.swift */; };
+		81855C7C30616162008366B7 /* MovieIntents.swift in Sources */ = {isa = PBXBuildFile; fileRef = A02900000000000000000003 /* MovieIntents.swift */; };
+		81855C7D30616162008366B7 /* FileAccessManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = A02900000000000000000004 /* FileAccessManager.swift */; };
+		81855C7E30616162008366B7 /* AutomationSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = A02900000000000000000005 /* AutomationSettings.swift */; };
+		81855C7F30616162008366B7 /* MCPServerController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A02900000000000000000007 /* MCPServerController.swift */; };
+		81855C8030616162008366B7 /* MovieMCPTools.swift in Sources */ = {isa = PBXBuildFile; fileRef = A02900000000000000000008 /* MovieMCPTools.swift */; };
+		81855C8130616162008366B7 /* TokenStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = A02900000000000000000009 /* TokenStore.swift */; };
+		81855C8230616162008366B7 /* AutomationBootstrap.swift in Sources */ = {isa = PBXBuildFile; fileRef = A0290000000000000000000A /* AutomationBootstrap.swift */; };
+		81855C8330616162008366B7 /* MCPPeerIdentity.swift in Sources */ = {isa = PBXBuildFile; fileRef = A03000000000000000000001 /* MCPPeerIdentity.swift */; };
+		81855C8430616162008366B7 /* MCPUnixSocket.swift in Sources */ = {isa = PBXBuildFile; fileRef = A03000000000000000000002 /* MCPUnixSocket.swift */; };
+		81855C8530616162008366B7 /* MCPUnixSocketTransport.swift in Sources */ = {isa = PBXBuildFile; fileRef = A03000000000000000000003 /* MCPUnixSocketTransport.swift */; };
+		81855C8630616162008366B7 /* MCPUnixSocketServer.swift in Sources */ = {isa = PBXBuildFile; fileRef = A03000000000000000000004 /* MCPUnixSocketServer.swift */; };
+		81855C8730616162008366B7 /* MCPLaunchRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = A03100000000000000000001 /* MCPLaunchRequest.swift */; };
+		81855C8830616162008366B7 /* AppController.m in Sources */ = {isa = PBXBuildFile; fileRef = 8151904A1187766300808105 /* AppController.m */; };
+		81855C8930616162008366B7 /* PrimaryWindowController.m in Sources */ = {isa = PBXBuildFile; fileRef = 814F4A42146306EB00CA0F3B /* PrimaryWindowController.m */; };
+		81855C8A30616162008366B7 /* MovieFrameRenderer.m in Sources */ = {isa = PBXBuildFile; fileRef = A02700000000000000000004 /* MovieFrameRenderer.m */; };
+		81855C8B30616162008366B7 /* ImagesToMovie.m in Sources */ = {isa = PBXBuildFile; fileRef = 814F4A4D146319E100CA0F3B /* ImagesToMovie.m */; };
+		81855C8C30616162008366B7 /* ImagesToMovieController.m in Sources */ = {isa = PBXBuildFile; fileRef = 814F4A5414632B0200CA0F3B /* ImagesToMovieController.m */; };
+		81855C8D30616162008366B7 /* ImageTableController.m in Sources */ = {isa = PBXBuildFile; fileRef = 814F4A5A14633C8C00CA0F3B /* ImageTableController.m */; };
+		81855C8E30616162008366B7 /* CoreImage.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A02700000000000000000001 /* CoreImage.framework */; };
+		81855C8F30616162008366B7 /* ImageIO.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A02700000000000000000002 /* ImageIO.framework */; };
+		81855C9030616162008366B7 /* VideoToolbox.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A02700000000000000000003 /* VideoToolbox.framework */; };
+		81855C9130616162008366B7 /* UniformTypeIdentifiers.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 81C95AFA1710E15B004D1D34 /* UniformTypeIdentifiers.framework */; };
+		81855C9230616162008366B7 /* CoreMedia.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 81C95AF81710E15B004D1D34 /* CoreMedia.framework */; };
+		81855C9330616162008366B7 /* CoreVideo.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 81C95AF61710E14F004D1D34 /* CoreVideo.framework */; };
+		81855C9430616162008366B7 /* AVFoundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 81C95AF41710E141004D1D34 /* AVFoundation.framework */; };
+		81855C9530616162008366B7 /* Cocoa.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 1058C7A1FEA54F0111CA2CBB /* Cocoa.framework */; };
+		81855C9830616162008366B7 /* MCP in Frameworks */ = {isa = PBXBuildFile; productRef = A02900000000000000030001 /* MCP */; };
+		81855C9930616162008366B7 /* Logging in Frameworks */ = {isa = PBXBuildFile; productRef = A02900000000000000030002 /* Logging */; };
 		81C95AF51710E141004D1D34 /* AVFoundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 81C95AF41710E141004D1D34 /* AVFoundation.framework */; };
 		81C95AF71710E14F004D1D34 /* CoreVideo.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 81C95AF61710E14F004D1D34 /* CoreVideo.framework */; };
 		81C95AF91710E15B004D1D34 /* CoreMedia.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 81C95AF81710E15B004D1D34 /* CoreMedia.framework */; };
@@ -35,34 +68,46 @@
 		A02900000000000000010008 /* MovieMCPTools.swift in Sources */ = {isa = PBXBuildFile; fileRef = A02900000000000000000008 /* MovieMCPTools.swift */; };
 		A02900000000000000010009 /* TokenStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = A02900000000000000000009 /* TokenStore.swift */; };
 		A0290000000000000001000A /* AutomationBootstrap.swift in Sources */ = {isa = PBXBuildFile; fileRef = A0290000000000000000000A /* AutomationBootstrap.swift */; };
-        A02900000000000000040001 /* MCP in Frameworks */ = {isa = PBXBuildFile; productRef = A02900000000000000030001; };
-        A02900000000000000040002 /* Logging in Frameworks */ = {isa = PBXBuildFile; productRef = A02900000000000000030002; };
-        A02900000000000000070001 /* Tests/ExportRegression.m in Sources */ = {isa = PBXBuildFile; fileRef = A02900000000000000060001; };
-        A02900000000000000070002 /* Tests/AutomationRegression.swift in Sources */ = {isa = PBXBuildFile; fileRef = A02900000000000000060002; };
-        A02900000000000000070003 /* Tests/FileAccessRegression.swift in Sources */ = {isa = PBXBuildFile; fileRef = A02900000000000000060003; };
-        A02900000000000000070004 /* Tests/MCPRegression.swift in Sources */ = {isa = PBXBuildFile; fileRef = A02900000000000000060004; };
-        A02900000000000000090002 /* ThirdPartyNotices.txt in Resources */ = {isa = PBXBuildFile; fileRef = A02900000000000000090001; };
-		A03000000000000000000065 /* MCPPeerIdentity.swift in Sources */ = {isa = PBXBuildFile; fileRef = A03000000000000000000001; };
-		A03000000000000000000066 /* MCPUnixSocket.swift in Sources */ = {isa = PBXBuildFile; fileRef = A03000000000000000000002; };
-		A03000000000000000000067 /* MCPUnixSocketTransport.swift in Sources */ = {isa = PBXBuildFile; fileRef = A03000000000000000000003; };
-		A03000000000000000000068 /* MCPUnixSocketServer.swift in Sources */ = {isa = PBXBuildFile; fileRef = A03000000000000000000004; };
-		A03000000000000000000069 /* MCPBridgeMain.swift in Sources */ = {isa = PBXBuildFile; fileRef = A03000000000000000000005; };
-		A030000000000000000000D2 /* image2movie-mcp in Embed Bridge */ = {isa = PBXBuildFile; fileRef = A030000000000000000000C8; settings = {ATTRIBUTES = (CodeSignOnCopy,); }; };
-		A03000000000000000000301 /* MCPSettingsRegression.swift in Sources */ = {isa = PBXBuildFile; fileRef = A03000000000000000000300; };
-		A03100000000000000000002 /* MCPLaunchRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = A03100000000000000000001; };
+		A02900000000000000040001 /* MCP in Frameworks */ = {isa = PBXBuildFile; productRef = A02900000000000000030001 /* MCP */; };
+		A02900000000000000040002 /* Logging in Frameworks */ = {isa = PBXBuildFile; productRef = A02900000000000000030002 /* Logging */; };
+		A02900000000000000070001 /* Tests/ExportRegression.m in Sources */ = {isa = PBXBuildFile; fileRef = A02900000000000000060001 /* Tests/ExportRegression.m */; };
+		A02900000000000000070002 /* Tests/AutomationRegression.swift in Sources */ = {isa = PBXBuildFile; fileRef = A02900000000000000060002 /* Tests/AutomationRegression.swift */; };
+		A02900000000000000070003 /* Tests/FileAccessRegression.swift in Sources */ = {isa = PBXBuildFile; fileRef = A02900000000000000060003 /* Tests/FileAccessRegression.swift */; };
+		A02900000000000000070004 /* Tests/MCPRegression.swift in Sources */ = {isa = PBXBuildFile; fileRef = A02900000000000000060004 /* Tests/MCPRegression.swift */; };
+		A02900000000000000090002 /* ThirdPartyNotices.txt in Resources */ = {isa = PBXBuildFile; fileRef = A02900000000000000090001 /* ThirdPartyNotices.txt */; };
+		A03000000000000000000065 /* MCPPeerIdentity.swift in Sources */ = {isa = PBXBuildFile; fileRef = A03000000000000000000001 /* MCPPeerIdentity.swift */; };
+		A03000000000000000000066 /* MCPUnixSocket.swift in Sources */ = {isa = PBXBuildFile; fileRef = A03000000000000000000002 /* MCPUnixSocket.swift */; };
+		A03000000000000000000067 /* MCPUnixSocketTransport.swift in Sources */ = {isa = PBXBuildFile; fileRef = A03000000000000000000003 /* MCPUnixSocketTransport.swift */; };
+		A03000000000000000000068 /* MCPUnixSocketServer.swift in Sources */ = {isa = PBXBuildFile; fileRef = A03000000000000000000004 /* MCPUnixSocketServer.swift */; };
+		A03000000000000000000069 /* MCPBridgeMain.swift in Sources */ = {isa = PBXBuildFile; fileRef = A03000000000000000000005 /* MCPBridgeMain.swift */; };
+		A030000000000000000000D2 /* image2movie-mcp in Embed Bridge */ = {isa = PBXBuildFile; fileRef = A030000000000000000000C8 /* image2movie-mcp */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
+		A03000000000000000000301 /* Tests/MCPSettingsRegression.swift in Sources */ = {isa = PBXBuildFile; fileRef = A03000000000000000000300 /* Tests/MCPSettingsRegression.swift */; };
+		A03100000000000000000002 /* MCPLaunchRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = A03100000000000000000001 /* MCPLaunchRequest.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
-        A030000000000000000000D1 = {isa = PBXContainerItemProxy; containerPortal = 29B97313FDCFA39411CA2CEA; proxyType = 1; remoteGlobalIDString = A030000000000000000000C9; remoteInfo = "image2movie-mcp"; };
+		A030000000000000000000D1 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 29B97313FDCFA39411CA2CEA /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = A030000000000000000000C9;
+			remoteInfo = "image2movie-mcp";
+		};
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXCopyFilesBuildPhase section */
-        A030000000000000000000CF /* Embed Bridge */ = {isa = PBXCopyFilesBuildPhase; buildActionMask = 2147483647; dstPath = ""; dstSubfolderSpec = 6; files = (A030000000000000000000D2,); name = "Embed Bridge"; runOnlyForDeploymentPostprocessing = 0; };
+		A030000000000000000000CF /* Embed Bridge */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 6;
+			files = (
+				A030000000000000000000D2 /* image2movie-mcp in Embed Bridge */,
+			);
+			name = "Embed Bridge";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXCopyFilesBuildPhase section */
-
-/* Begin PBXTargetDependency section */
-        A030000000000000000000D0 = {isa = PBXTargetDependency; target = A030000000000000000000C9; targetProxy = A030000000000000000000D1; };
-/* End PBXTargetDependency section */
 
 /* Begin PBXFileReference section */
 		089C165DFE840E0CC02AAC07 /* English */ = {isa = PBXFileReference; fileEncoding = 10; lastKnownFileType = text.plist.strings; name = English; path = English.lproj/InfoPlist.strings; sourceTree = "<group>"; };
@@ -105,19 +150,19 @@
 		A02900000000000000000008 /* MovieMCPTools.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MovieMCPTools.swift; sourceTree = "<group>"; };
 		A02900000000000000000009 /* TokenStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TokenStore.swift; sourceTree = "<group>"; };
 		A0290000000000000000000A /* AutomationBootstrap.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AutomationBootstrap.swift; sourceTree = "<group>"; };
-        A02900000000000000060001 /* Tests/ExportRegression.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = Tests/ExportRegression.m; sourceTree = "<group>"; };
-        A02900000000000000060002 /* Tests/AutomationRegression.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Tests/AutomationRegression.swift; sourceTree = "<group>"; };
-        A02900000000000000060003 /* Tests/FileAccessRegression.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Tests/FileAccessRegression.swift; sourceTree = "<group>"; };
-        A02900000000000000080001 /* Image2MovieRegression */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; path = Image2MovieRegression; sourceTree = BUILT_PRODUCTS_DIR; };
-        A02900000000000000060004 /* Tests/MCPRegression.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Tests/MCPRegression.swift; sourceTree = "<group>"; };
-        A02900000000000000090001 /* ThirdPartyNotices.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = ThirdPartyNotices.txt; sourceTree = "<group>"; };
+		A02900000000000000060001 /* Tests/ExportRegression.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = Tests/ExportRegression.m; sourceTree = "<group>"; };
+		A02900000000000000060002 /* Tests/AutomationRegression.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Tests/AutomationRegression.swift; sourceTree = "<group>"; };
+		A02900000000000000060003 /* Tests/FileAccessRegression.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Tests/FileAccessRegression.swift; sourceTree = "<group>"; };
+		A02900000000000000060004 /* Tests/MCPRegression.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Tests/MCPRegression.swift; sourceTree = "<group>"; };
+		A02900000000000000080001 /* Image2MovieRegression */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; path = Image2MovieRegression; sourceTree = BUILT_PRODUCTS_DIR; };
+		A02900000000000000090001 /* ThirdPartyNotices.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = ThirdPartyNotices.txt; sourceTree = "<group>"; };
 		A03000000000000000000001 /* MCPPeerIdentity.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MCPPeerIdentity.swift; sourceTree = "<group>"; };
 		A03000000000000000000002 /* MCPUnixSocket.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MCPUnixSocket.swift; sourceTree = "<group>"; };
 		A03000000000000000000003 /* MCPUnixSocketTransport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MCPUnixSocketTransport.swift; sourceTree = "<group>"; };
 		A03000000000000000000004 /* MCPUnixSocketServer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MCPUnixSocketServer.swift; sourceTree = "<group>"; };
 		A03000000000000000000005 /* MCPBridgeMain.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MCPBridgeMain.swift; sourceTree = "<group>"; };
 		A030000000000000000000C8 /* image2movie-mcp */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = "image2movie-mcp"; sourceTree = BUILT_PRODUCTS_DIR; };
-		A03000000000000000000300 /* MCPSettingsRegression.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Tests/MCPSettingsRegression.swift; sourceTree = "<group>"; };
+		A03000000000000000000300 /* Tests/MCPSettingsRegression.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Tests/MCPSettingsRegression.swift; sourceTree = "<group>"; };
 		A03100000000000000000001 /* MCPLaunchRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MCPLaunchRequest.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -134,68 +179,38 @@
 				81C95AF71710E14F004D1D34 /* CoreVideo.framework in Frameworks */,
 				81C95AF51710E141004D1D34 /* AVFoundation.framework in Frameworks */,
 				8D11072F0486CEB800E47090 /* Cocoa.framework in Frameworks */,
-                A02900000000000000040001 /* MCP in Frameworks */,
-                A02900000000000000040002 /* Logging in Frameworks */,
+				A02900000000000000040001 /* MCP in Frameworks */,
+				A02900000000000000040002 /* Logging in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
-        A02900000000000000080004 = {
-            isa = PBXFrameworksBuildPhase;
-            buildActionMask = 2147483647;
-            files = (
-
-				A02700000000000000000011 /* CoreImage.framework in Frameworks */,
-				A02700000000000000000012 /* ImageIO.framework in Frameworks */,
-				A02700000000000000000013 /* VideoToolbox.framework in Frameworks */,
-				81C95AFB1710E15B004D1D34 /* UniformTypeIdentifiers.framework in Frameworks */,
-				81C95AF91710E15B004D1D34 /* CoreMedia.framework in Frameworks */,
-				81C95AF71710E14F004D1D34 /* CoreVideo.framework in Frameworks */,
-				81C95AF51710E141004D1D34 /* AVFoundation.framework in Frameworks */,
-				8D11072F0486CEB800E47090 /* Cocoa.framework in Frameworks */,
-                A02900000000000000040001 /* MCP in Frameworks */,
-                A02900000000000000040002 /* Logging in Frameworks */,
-
-            );
-            runOnlyForDeploymentPostprocessing = 0;
-        };
-		A030000000000000000000CB = {isa = PBXFrameworksBuildPhase; buildActionMask = 2147483647; files = (); runOnlyForDeploymentPostprocessing = 0; };
+		A02900000000000000080004 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				81855C8E30616162008366B7 /* CoreImage.framework in Frameworks */,
+				81855C8F30616162008366B7 /* ImageIO.framework in Frameworks */,
+				81855C9030616162008366B7 /* VideoToolbox.framework in Frameworks */,
+				81855C9130616162008366B7 /* UniformTypeIdentifiers.framework in Frameworks */,
+				81855C9230616162008366B7 /* CoreMedia.framework in Frameworks */,
+				81855C9330616162008366B7 /* CoreVideo.framework in Frameworks */,
+				81855C9930616162008366B7 /* Logging in Frameworks */,
+				81855C9430616162008366B7 /* AVFoundation.framework in Frameworks */,
+				81855C9530616162008366B7 /* Cocoa.framework in Frameworks */,
+				81855C9830616162008366B7 /* MCP in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		A030000000000000000000CB /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
-        A02900000000000000080002 /* Regression Checks */ = {
-            isa = PBXGroup;
-            children = (
-                A02900000000000000060001,
-                A02900000000000000060002,
-                A02900000000000000060003,
-                A02900000000000000060004,
-                A03000000000000000000300,
-            );
-            name = "Regression Checks";
-            sourceTree = "<group>";
-        };
-        A02900000000000000020001 /* Automation */ = {
-            isa = PBXGroup;
-            children = (
-				A02900000000000000000001 /* ExportTypes.swift */,
-				A02900000000000000000002 /* ExportCoordinator.swift */,
-				A02900000000000000000003 /* MovieIntents.swift */,
-				A02900000000000000000004 /* FileAccessManager.swift */,
-				A02900000000000000000005 /* AutomationSettings.swift */,
-				A02900000000000000000007 /* MCPServerController.swift */,
-				A02900000000000000000008 /* MovieMCPTools.swift */,
-				A02900000000000000000009 /* TokenStore.swift */,
-				A0290000000000000000000A /* AutomationBootstrap.swift */,
-				A03000000000000000000001 /* MCPPeerIdentity.swift */,
-				A03000000000000000000002 /* MCPUnixSocket.swift */,
-				A03000000000000000000003 /* MCPUnixSocketTransport.swift */,
-				A03000000000000000000004 /* MCPUnixSocketServer.swift */,
-				A03000000000000000000005 /* MCPBridgeMain.swift */,
-				A03100000000000000000001 /* MCPLaunchRequest.swift */,
-            );
-            name = Automation;
-            sourceTree = "<group>";
-        };
 		080E96DDFE201D6D7F000001 /* Classes */ = {
 			isa = PBXGroup;
 			children = (
@@ -234,7 +249,7 @@
 			children = (
 				8D1107320486CEB800E47090 /* Image2Movie.app */,
 				A030000000000000000000C8 /* image2movie-mcp */,
-                A02900000000000000080001 /* Image2MovieRegression */,
+				A02900000000000000080001 /* Image2MovieRegression */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -247,7 +262,7 @@
 				81C95AF61710E14F004D1D34 /* CoreVideo.framework */,
 				81C95AF41710E141004D1D34 /* AVFoundation.framework */,
 				A02900000000000000020001 /* Automation */,
-                A02900000000000000080002 /* Regression Checks */,
+				A02900000000000000080002 /* Regression Checks */,
 				080E96DDFE201D6D7F000001 /* Classes */,
 				29B97315FDCFA39411CA2CEA /* Other Sources */,
 				29B97317FDCFA39411CA2CEA /* Resources */,
@@ -270,7 +285,7 @@
 			isa = PBXGroup;
 			children = (
 				8D1107310486CEB800E47090 /* Info.plist */,
-                A02900000000000000090001 /* ThirdPartyNotices.txt */,
+				A02900000000000000090001 /* ThirdPartyNotices.txt */,
 				089C165CFE840E0CC02AAC07 /* InfoPlist.strings */,
 				29B97318FDCFA39411CA2CEA /* MainMenu.xib */,
 			);
@@ -311,6 +326,40 @@
 			name = Controllers;
 			sourceTree = "<group>";
 		};
+		A02900000000000000020001 /* Automation */ = {
+			isa = PBXGroup;
+			children = (
+				A02900000000000000000001 /* ExportTypes.swift */,
+				A02900000000000000000002 /* ExportCoordinator.swift */,
+				A02900000000000000000003 /* MovieIntents.swift */,
+				A02900000000000000000004 /* FileAccessManager.swift */,
+				A02900000000000000000005 /* AutomationSettings.swift */,
+				A02900000000000000000007 /* MCPServerController.swift */,
+				A02900000000000000000008 /* MovieMCPTools.swift */,
+				A02900000000000000000009 /* TokenStore.swift */,
+				A0290000000000000000000A /* AutomationBootstrap.swift */,
+				A03000000000000000000001 /* MCPPeerIdentity.swift */,
+				A03000000000000000000002 /* MCPUnixSocket.swift */,
+				A03000000000000000000003 /* MCPUnixSocketTransport.swift */,
+				A03000000000000000000004 /* MCPUnixSocketServer.swift */,
+				A03000000000000000000005 /* MCPBridgeMain.swift */,
+				A03100000000000000000001 /* MCPLaunchRequest.swift */,
+			);
+			name = Automation;
+			sourceTree = "<group>";
+		};
+		A02900000000000000080002 /* Regression Checks */ = {
+			isa = PBXGroup;
+			children = (
+				A02900000000000000060001 /* Tests/ExportRegression.m */,
+				A02900000000000000060002 /* Tests/AutomationRegression.swift */,
+				A02900000000000000060003 /* Tests/FileAccessRegression.swift */,
+				A02900000000000000060004 /* Tests/MCPRegression.swift */,
+				A03000000000000000000300 /* Tests/MCPSettingsRegression.swift */,
+			);
+			name = "Regression Checks";
+			sourceTree = "<group>";
+		};
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
@@ -321,46 +370,59 @@
 				8D1107290486CEB800E47090 /* Resources */,
 				8D11072C0486CEB800E47090 /* Sources */,
 				8D11072E0486CEB800E47090 /* Frameworks */,
-                A030000000000000000000CF /* Embed Bridge */,
+				A030000000000000000000CF /* Embed Bridge */,
 			);
 			buildRules = (
 			);
 			dependencies = (
-                A030000000000000000000D0,
+				A030000000000000000000D0 /* PBXTargetDependency */,
 			);
 			name = Image2Movie;
-			productInstallPath = "$(HOME)/Applications";
 			packageProductDependencies = (
-                A02900000000000000030001 /* MCP */,
-                A02900000000000000030002 /* Logging */,
-            );
+				A02900000000000000030001 /* MCP */,
+				A02900000000000000030002 /* Logging */,
+			);
+			productInstallPath = "$(LOCAL_APPS_DIR)";
 			productName = Image2Movie;
 			productReference = 8D1107320486CEB800E47090 /* Image2Movie.app */;
 			productType = "com.apple.product-type.application";
 		};
-        A02900000000000000080005 /* Image2MovieRegression */ = {
-            isa = PBXNativeTarget;
-            buildConfigurationList = A02900000000000000080006;
-            buildPhases = (A02900000000000000080003, A02900000000000000080004,);
-            buildRules = ();
-            dependencies = ();
-            name = Image2MovieRegression;
-            productName = Image2MovieRegression;
-            productReference = A02900000000000000080001;
-            productType = "com.apple.product-type.tool";
-            packageProductDependencies = (A02900000000000000030001,A02900000000000000030002,);
-        };
+		A02900000000000000080005 /* Image2MovieRegression */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = A02900000000000000080006 /* Build configuration list for PBXNativeTarget "Image2MovieRegression" */;
+			buildPhases = (
+				A02900000000000000080003 /* Sources */,
+				A02900000000000000080004 /* Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = Image2MovieRegression;
+			packageProductDependencies = (
+				A02900000000000000030001 /* MCP */,
+				A02900000000000000030002 /* Logging */,
+			);
+			productName = Image2MovieRegression;
+			productReference = A02900000000000000080001 /* Image2MovieRegression */;
+			productType = "com.apple.product-type.tool";
+		};
 		A030000000000000000000C9 /* image2movie-mcp */ = {
-            isa = PBXNativeTarget;
-            buildConfigurationList = A030000000000000000000CC;
-            buildPhases = (A030000000000000000000CA, A030000000000000000000CB,);
-            buildRules = ();
-            dependencies = ();
-            name = "image2movie-mcp";
-            productName = "image2movie-mcp";
-            productReference = A030000000000000000000C8;
-            productType = "com.apple.product-type.tool";
-        };
+			isa = PBXNativeTarget;
+			buildConfigurationList = A030000000000000000000CC /* Build configuration list for PBXNativeTarget "image2movie-mcp" */;
+			buildPhases = (
+				A030000000000000000000CA /* Sources */,
+				A030000000000000000000CB /* Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = "image2movie-mcp";
+			productName = "image2movie-mcp";
+			productReference = A030000000000000000000C8 /* image2movie-mcp */;
+			productType = "com.apple.product-type.tool";
+		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -368,11 +430,6 @@
 			isa = PBXProject;
 			attributes = {
 				LastUpgradeCheck = 2700;
-				TargetAttributes = {
-					8D1107260486CEB800E47090 = {
-						DevelopmentTeam = BWNJC57N56;
-					};
-				};
 			};
 			buildConfigurationList = C01FCF4E08A954540054247B /* Build configuration list for PBXProject "Image2Movie" */;
 			compatibilityVersion = "Xcode 14.0";
@@ -383,16 +440,16 @@
 				en,
 			);
 			mainGroup = 29B97314FDCFA39411CA2CEA /* Image2Movie */;
+			packageReferences = (
+				A02900000000000000050001 /* XCRemoteSwiftPackageReference "swift-sdk" */,
+				A02900000000000000050002 /* XCRemoteSwiftPackageReference "swift-log" */,
+			);
 			projectDirPath = "";
 			projectRoot = "";
-            packageReferences = (
-                A02900000000000000050001,
-                A02900000000000000050002,
-            );
 			targets = (
 				8D1107260486CEB800E47090 /* Image2Movie */,
-                A02900000000000000080005 /* Image2MovieRegression */,
-                A030000000000000000000C9 /* image2movie-mcp */,
+				A02900000000000000080005 /* Image2MovieRegression */,
+				A030000000000000000000C9 /* image2movie-mcp */,
 			);
 		};
 /* End PBXProject section */
@@ -403,7 +460,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				8D11072A0486CEB800E47090 /* MainMenu.xib in Resources */,
-                A02900000000000000090002 /* ThirdPartyNotices.txt in Resources */,
+				A02900000000000000090002 /* ThirdPartyNotices.txt in Resources */,
 				8D11072B0486CEB800E47090 /* InfoPlist.strings in Resources */,
 				814F4A451463070000CA0F3B /* PrimaryWindow.xib in Resources */,
 				8129016417188C700024DED8 /* Image2MovieIcon.iconset in Resources */,
@@ -417,7 +474,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-								A02900000000000000010001 /* ExportTypes.swift in Sources */,
+				A02900000000000000010001 /* ExportTypes.swift in Sources */,
 				A02900000000000000010002 /* ExportCoordinator.swift in Sources */,
 				A02900000000000000010003 /* MovieIntents.swift in Sources */,
 				A02900000000000000010004 /* FileAccessManager.swift in Sources */,
@@ -426,11 +483,11 @@
 				A02900000000000000010008 /* MovieMCPTools.swift in Sources */,
 				A02900000000000000010009 /* TokenStore.swift in Sources */,
 				A0290000000000000001000A /* AutomationBootstrap.swift in Sources */,
-				A03000000000000000000065 /* MCPPeerIdentity.swift in Sources */,
-				A03000000000000000000066 /* MCPUnixSocket.swift in Sources */,
+				81855C7730616162008366B7 /* MCPPeerIdentity.swift in Sources */,
+				81855C7830616162008366B7 /* MCPUnixSocket.swift in Sources */,
 				A03000000000000000000067 /* MCPUnixSocketTransport.swift in Sources */,
 				A03000000000000000000068 /* MCPUnixSocketServer.swift in Sources */,
-				A03100000000000000000002 /* MCPLaunchRequest.swift in Sources */,
+				81855C7930616162008366B7 /* MCPLaunchRequest.swift in Sources */,
 				8D11072D0486CEB800E47090 /* main.m in Sources */,
 				8151904B1187766300808105 /* AppController.m in Sources */,
 				814F4A43146306EB00CA0F3B /* PrimaryWindowController.m in Sources */,
@@ -441,42 +498,58 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
-        A02900000000000000080003 = {
-            isa = PBXSourcesBuildPhase;
-            buildActionMask = 2147483647;
-            files = (
-
-								A02900000000000000010001 /* ExportTypes.swift in Sources */,
-				A02900000000000000010002 /* ExportCoordinator.swift in Sources */,
-				A02900000000000000010003 /* MovieIntents.swift in Sources */,
-				A02900000000000000010004 /* FileAccessManager.swift in Sources */,
-				A02900000000000000010005 /* AutomationSettings.swift in Sources */,
-				A02900000000000000010007 /* MCPServerController.swift in Sources */,
-				A02900000000000000010008 /* MovieMCPTools.swift in Sources */,
-				A02900000000000000010009 /* TokenStore.swift in Sources */,
-				A0290000000000000001000A /* AutomationBootstrap.swift in Sources */,
+		A02900000000000000080003 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				81855C7A30616162008366B7 /* ExportTypes.swift in Sources */,
+				81855C7B30616162008366B7 /* ExportCoordinator.swift in Sources */,
+				81855C7C30616162008366B7 /* MovieIntents.swift in Sources */,
+				81855C7D30616162008366B7 /* FileAccessManager.swift in Sources */,
+				81855C7E30616162008366B7 /* AutomationSettings.swift in Sources */,
+				81855C7F30616162008366B7 /* MCPServerController.swift in Sources */,
+				81855C8030616162008366B7 /* MovieMCPTools.swift in Sources */,
+				81855C8130616162008366B7 /* TokenStore.swift in Sources */,
+				81855C8230616162008366B7 /* AutomationBootstrap.swift in Sources */,
+				81855C8330616162008366B7 /* MCPPeerIdentity.swift in Sources */,
+				81855C8430616162008366B7 /* MCPUnixSocket.swift in Sources */,
+				81855C8530616162008366B7 /* MCPUnixSocketTransport.swift in Sources */,
+				81855C8630616162008366B7 /* MCPUnixSocketServer.swift in Sources */,
+				81855C8730616162008366B7 /* MCPLaunchRequest.swift in Sources */,
+				81855C8830616162008366B7 /* AppController.m in Sources */,
+				81855C8930616162008366B7 /* PrimaryWindowController.m in Sources */,
+				81855C8A30616162008366B7 /* MovieFrameRenderer.m in Sources */,
+				81855C8B30616162008366B7 /* ImagesToMovie.m in Sources */,
+				81855C8C30616162008366B7 /* ImagesToMovieController.m in Sources */,
+				81855C8D30616162008366B7 /* ImageTableController.m in Sources */,
+				A02900000000000000070001 /* Tests/ExportRegression.m in Sources */,
+				A02900000000000000070002 /* Tests/AutomationRegression.swift in Sources */,
+				A02900000000000000070003 /* Tests/FileAccessRegression.swift in Sources */,
+				A02900000000000000070004 /* Tests/MCPRegression.swift in Sources */,
+				A03000000000000000000301 /* Tests/MCPSettingsRegression.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		A030000000000000000000CA /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
 				A03000000000000000000065 /* MCPPeerIdentity.swift in Sources */,
 				A03000000000000000000066 /* MCPUnixSocket.swift in Sources */,
-				A03000000000000000000067 /* MCPUnixSocketTransport.swift in Sources */,
-				A03000000000000000000068 /* MCPUnixSocketServer.swift in Sources */,
+				A03000000000000000000069 /* MCPBridgeMain.swift in Sources */,
 				A03100000000000000000002 /* MCPLaunchRequest.swift in Sources */,
-				8151904B1187766300808105 /* AppController.m in Sources */,
-				814F4A43146306EB00CA0F3B /* PrimaryWindowController.m in Sources */,
-				A02700000000000000000014 /* MovieFrameRenderer.m in Sources */,
-				814F4A4E146319E200CA0F3B /* ImagesToMovie.m in Sources */,
-				814F4A5514632B0200CA0F3B /* ImagesToMovieController.m in Sources */,
-				814F4A5B14633C8C00CA0F3B /* ImageTableController.m in Sources */,
-
-                A02900000000000000070001,
-                A02900000000000000070002,
-                A02900000000000000070003,
-                A02900000000000000070004,
-                A03000000000000000000301,
-            );
-            runOnlyForDeploymentPostprocessing = 0;
-        };
-		A030000000000000000000CA = {isa = PBXSourcesBuildPhase; buildActionMask = 2147483647; files = (A03000000000000000000065, A03000000000000000000066, A03000000000000000000069, A03100000000000000000002,); runOnlyForDeploymentPostprocessing = 0; };
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		A030000000000000000000D0 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = A030000000000000000000C9 /* image2movie-mcp */;
+			targetProxy = A030000000000000000000D1 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
 
 /* Begin PBXVariantGroup section */
 		089C165CFE840E0CC02AAC07 /* InfoPlist.strings */ = {
@@ -497,44 +570,125 @@
 		};
 /* End PBXVariantGroup section */
 
-/* Begin XCRemoteSwiftPackageReference section */
-        A02900000000000000050001 = {isa = XCRemoteSwiftPackageReference; repositoryURL = "https://github.com/modelcontextprotocol/swift-sdk"; requirement = {kind = exactVersion; version = 0.12.1; }; };
-        A02900000000000000050002 = {isa = XCRemoteSwiftPackageReference; repositoryURL = "https://github.com/apple/swift-log.git"; requirement = {kind = exactVersion; version = 1.15.1; }; };
-/* End XCRemoteSwiftPackageReference section */
-/* Begin XCSwiftPackageProductDependency section */
-        A02900000000000000030001 /* MCP */ = {isa = XCSwiftPackageProductDependency; package = A02900000000000000050001; productName = MCP; };
-        A02900000000000000030002 /* Logging */ = {isa = XCSwiftPackageProductDependency; package = A02900000000000000050002; productName = Logging; };
-/* End XCSwiftPackageProductDependency section */
-
 /* Begin XCBuildConfiguration section */
+		A02900000000000000080007 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ARCHS = arm64;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CODE_SIGNING_ALLOWED = NO;
+				GCC_PREFIX_HEADER = Image2Movie_Prefix.pch;
+				HEADER_SEARCH_PATHS = "$(SRCROOT)";
+				MACOSX_DEPLOYMENT_TARGET = 27.0;
+				OTHER_LDFLAGS = "-lbsm";
+				PRODUCT_MODULE_NAME = Image2MovieRegression;
+				PRODUCT_NAME = Image2MovieRegression;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = REGRESSION_TESTS;
+				SWIFT_OBJC_BRIDGING_HEADER = "Image2Movie-Bridging-Header.h";
+				SWIFT_OBJC_INTERFACE_HEADER_NAME = "Image2Movie-Swift.h";
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 6.0;
+			};
+			name = Debug;
+		};
+		A02900000000000000080008 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ARCHS = arm64;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CODE_SIGNING_ALLOWED = NO;
+				GCC_PREFIX_HEADER = Image2Movie_Prefix.pch;
+				HEADER_SEARCH_PATHS = "$(SRCROOT)";
+				MACOSX_DEPLOYMENT_TARGET = 27.0;
+				OTHER_LDFLAGS = "-lbsm";
+				PRODUCT_MODULE_NAME = Image2MovieRegression;
+				PRODUCT_NAME = Image2MovieRegression;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = REGRESSION_TESTS;
+				SWIFT_OBJC_BRIDGING_HEADER = "Image2Movie-Bridging-Header.h";
+				SWIFT_OBJC_INTERFACE_HEADER_NAME = "Image2Movie-Swift.h";
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 6.0;
+			};
+			name = Release;
+		};
+		A030000000000000000000CD /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ARCHS = arm64;
+				CODE_SIGN_ENTITLEMENTS = MCPBridge.entitlements;
+				CODE_SIGN_IDENTITY = "Apple Development";
+				CODE_SIGN_INJECT_BASE_ENTITLEMENTS = NO;
+				CODE_SIGN_STYLE = Automatic;
+				CREATE_INFOPLIST_SECTION_IN_BINARY = YES;
+				DEVELOPMENT_TEAM = BWNJC57N56;
+				ENABLE_APP_SANDBOX = YES;
+				ENABLE_HARDENED_RUNTIME = YES;
+				INFOPLIST_FILE = "MCPBridge-Info.plist";
+				MACOSX_DEPLOYMENT_TARGET = 27.0;
+				OTHER_LDFLAGS = "-lbsm";
+				PRODUCT_BUNDLE_IDENTIFIER = com.EarlyInnovations.Image2Movie.MCPBridge;
+				PRODUCT_NAME = "image2movie-mcp";
+				PROVISIONING_PROFILE_SPECIFIER = "";
+				SKIP_INSTALL = YES;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 6.0;
+			};
+			name = Debug;
+		};
+		A030000000000000000000CE /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ARCHS = arm64;
+				CODE_SIGN_ENTITLEMENTS = MCPBridge.entitlements;
+				CODE_SIGN_IDENTITY = "Apple Development";
+				CODE_SIGN_INJECT_BASE_ENTITLEMENTS = NO;
+				CODE_SIGN_STYLE = Automatic;
+				CREATE_INFOPLIST_SECTION_IN_BINARY = YES;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				DEVELOPMENT_TEAM = BWNJC57N56;
+				ENABLE_APP_SANDBOX = YES;
+				ENABLE_HARDENED_RUNTIME = YES;
+				INFOPLIST_FILE = "MCPBridge-Info.plist";
+				MACOSX_DEPLOYMENT_TARGET = 27.0;
+				OTHER_LDFLAGS = "-lbsm";
+				PRODUCT_BUNDLE_IDENTIFIER = com.EarlyInnovations.Image2Movie.MCPBridge;
+				PRODUCT_NAME = "image2movie-mcp";
+				PROVISIONING_PROFILE_SPECIFIER = "";
+				SKIP_INSTALL = YES;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				SWIFT_VERSION = 6.0;
+			};
+			name = Release;
+		};
 		C01FCF4B08A954540054247B /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
 				ARCHS = arm64;
 				CLANG_ENABLE_OBJC_ARC = YES;
+				CODE_SIGN_ENTITLEMENTS = Image2Movie.entitlements;
+				CODE_SIGN_IDENTITY = "Apple Development";
+				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
 				COPY_PHASE_STRIP = NO;
+				DEVELOPMENT_TEAM = BWNJC57N56;
+				ENABLE_APP_SANDBOX = YES;
+				ENABLE_HARDENED_RUNTIME = YES;
 				GCC_DYNAMIC_NO_PIC = NO;
 				GCC_OPTIMIZATION_LEVEL = 0;
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				GCC_PREFIX_HEADER = Image2Movie_Prefix.pch;
 				INFOPLIST_FILE = Info.plist;
-				INSTALL_PATH = "$(HOME)/Applications";
+				INSTALL_PATH = "$(LOCAL_APPS_DIR)";
 				MACOSX_DEPLOYMENT_TARGET = 27.0;
-				CODE_SIGN_ENTITLEMENTS = Image2Movie.entitlements;
-                CODE_SIGN_IDENTITY = "Apple Development";
-                CODE_SIGN_STYLE = Manual;
-                DEVELOPMENT_TEAM = BWNJC57N56;
-                ENABLE_APP_SANDBOX = YES;
-                ENABLE_HARDENED_RUNTIME = YES;
-                PRODUCT_BUNDLE_IDENTIFIER = com.EarlyInnovations.Image2Movie;
+				OTHER_LDFLAGS = "-lbsm";
+				PRODUCT_BUNDLE_IDENTIFIER = com.EarlyInnovations.Image2Movie;
 				PRODUCT_NAME = Image2Movie;
-                SWIFT_VERSION = 6.0;
-                SWIFT_OBJC_BRIDGING_HEADER = "Image2Movie-Bridging-Header.h";
-                OTHER_LDFLAGS = "-lbsm";
-                SWIFT_OBJC_INTERFACE_HEADER_NAME = "Image2Movie-Swift.h";
-                SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				PROVISIONING_PROFILE_SPECIFIER = "";
+				SWIFT_OBJC_BRIDGING_HEADER = "Image2Movie-Bridging-Header.h";
+				SWIFT_OBJC_INTERFACE_HEADER_NAME = "Image2Movie-Swift.h";
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 6.0;
 				WRAPPER_EXTENSION = app;
 			};
 			name = Debug;
@@ -543,29 +697,30 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
-				CODE_SIGN_INJECT_BASE_ENTITLEMENTS = NO;
 				ARCHS = arm64;
 				CLANG_ENABLE_OBJC_ARC = YES;
+				CODE_SIGN_ENTITLEMENTS = Image2Movie.entitlements;
+				CODE_SIGN_IDENTITY = "Apple Development";
+				CODE_SIGN_INJECT_BASE_ENTITLEMENTS = NO;
+				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				DEVELOPMENT_TEAM = BWNJC57N56;
+				ENABLE_APP_SANDBOX = YES;
+				ENABLE_HARDENED_RUNTIME = YES;
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				GCC_PREFIX_HEADER = Image2Movie_Prefix.pch;
 				INFOPLIST_FILE = Info.plist;
-				INSTALL_PATH = "$(HOME)/Applications";
+				INSTALL_PATH = "$(LOCAL_APPS_DIR)";
 				MACOSX_DEPLOYMENT_TARGET = 27.0;
-				CODE_SIGN_ENTITLEMENTS = Image2Movie.entitlements;
-                CODE_SIGN_IDENTITY = "Apple Development";
-                CODE_SIGN_STYLE = Manual;
-                DEVELOPMENT_TEAM = BWNJC57N56;
-                ENABLE_APP_SANDBOX = YES;
-                ENABLE_HARDENED_RUNTIME = YES;
-                PRODUCT_BUNDLE_IDENTIFIER = com.EarlyInnovations.Image2Movie;
+				OTHER_LDFLAGS = "-lbsm";
+				PRODUCT_BUNDLE_IDENTIFIER = com.EarlyInnovations.Image2Movie;
 				PRODUCT_NAME = Image2Movie;
-                SWIFT_VERSION = 6.0;
-                SWIFT_OBJC_BRIDGING_HEADER = "Image2Movie-Bridging-Header.h";
-                OTHER_LDFLAGS = "-lbsm";
-                SWIFT_OBJC_INTERFACE_HEADER_NAME = "Image2Movie-Swift.h";
-                SWIFT_OPTIMIZATION_LEVEL = "-O";
+				PROVISIONING_PROFILE_SPECIFIER = "";
+				SWIFT_OBJC_BRIDGING_HEADER = "Image2Movie-Bridging-Header.h";
+				SWIFT_OBJC_INTERFACE_HEADER_NAME = "Image2Movie-Swift.h";
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				SWIFT_VERSION = 6.0;
 				WRAPPER_EXTENSION = app;
 			};
 			name = Release;
@@ -576,6 +731,8 @@
 				ALWAYS_SEARCH_USER_PATHS = NO;
 				ARCHS = arm64;
 				CLANG_ENABLE_OBJC_ARC = YES;
+				CURRENT_PROJECT_VERSION = 1;
+				MARKETING_VERSION = 4.0;
 				ENABLE_TESTABILITY = YES;
 				GCC_WARN_ABOUT_RETURN_TYPE = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
@@ -590,101 +747,35 @@
 				ALWAYS_SEARCH_USER_PATHS = NO;
 				ARCHS = arm64;
 				CLANG_ENABLE_OBJC_ARC = YES;
+				CURRENT_PROJECT_VERSION = 1;
+				MARKETING_VERSION = 4.0;
 				GCC_WARN_ABOUT_RETURN_TYPE = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				SDKROOT = macosx;
 			};
 			name = Release;
 		};
-        A02900000000000000080007 /* Debug */ = {
-            isa = XCBuildConfiguration;
-            buildSettings = {
-                ARCHS = arm64;
-                CLANG_ENABLE_OBJC_ARC = YES;
-                CODE_SIGNING_ALLOWED = NO;
-                GCC_PREFIX_HEADER = Image2Movie_Prefix.pch;
-                HEADER_SEARCH_PATHS = "$(SRCROOT)";
-                MACOSX_DEPLOYMENT_TARGET = 27.0;
-                PRODUCT_NAME = Image2MovieRegression;
-                PRODUCT_MODULE_NAME = Image2MovieRegression;
-                SWIFT_VERSION = 6.0;
-                SWIFT_OBJC_BRIDGING_HEADER = "Image2Movie-Bridging-Header.h";
-                OTHER_LDFLAGS = "-lbsm";
-                SWIFT_OBJC_INTERFACE_HEADER_NAME = "Image2Movie-Swift.h";
-                SWIFT_OPTIMIZATION_LEVEL = "-Onone";
-                SWIFT_ACTIVE_COMPILATION_CONDITIONS = REGRESSION_TESTS;
-            };
-            name = Debug;
-        };
-        A02900000000000000080008 /* Release */ = {
-            isa = XCBuildConfiguration;
-            buildSettings = {
-                ARCHS = arm64;
-                CLANG_ENABLE_OBJC_ARC = YES;
-                CODE_SIGNING_ALLOWED = NO;
-                GCC_PREFIX_HEADER = Image2Movie_Prefix.pch;
-                HEADER_SEARCH_PATHS = "$(SRCROOT)";
-                MACOSX_DEPLOYMENT_TARGET = 27.0;
-                PRODUCT_NAME = Image2MovieRegression;
-                PRODUCT_MODULE_NAME = Image2MovieRegression;
-                SWIFT_VERSION = 6.0;
-                SWIFT_OBJC_BRIDGING_HEADER = "Image2Movie-Bridging-Header.h";
-                OTHER_LDFLAGS = "-lbsm";
-                SWIFT_OBJC_INTERFACE_HEADER_NAME = "Image2Movie-Swift.h";
-                SWIFT_OPTIMIZATION_LEVEL = "-Onone";
-                SWIFT_ACTIVE_COMPILATION_CONDITIONS = REGRESSION_TESTS;
-            };
-            name = Release;
-        };
-        A030000000000000000000CD /* Debug */ = {
-            isa = XCBuildConfiguration;
-            buildSettings = {
-                ARCHS = arm64;
-                CODE_SIGN_ENTITLEMENTS = MCPBridge.entitlements;
-                CODE_SIGN_IDENTITY = "Apple Development";
-                CODE_SIGN_INJECT_BASE_ENTITLEMENTS = NO;
-                CODE_SIGN_STYLE = Manual;
-                CREATE_INFOPLIST_SECTION_IN_BINARY = YES;
-                DEVELOPMENT_TEAM = BWNJC57N56;
-                ENABLE_APP_SANDBOX = YES;
-                ENABLE_HARDENED_RUNTIME = YES;
-                INFOPLIST_FILE = MCPBridge-Info.plist;
-                MACOSX_DEPLOYMENT_TARGET = 27.0;
-                OTHER_LDFLAGS = "-lbsm";
-                PRODUCT_BUNDLE_IDENTIFIER = com.EarlyInnovations.Image2Movie.MCPBridge;
-                PRODUCT_NAME = "image2movie-mcp";
-                SKIP_INSTALL = YES;
-                SWIFT_VERSION = 6.0;
-                SWIFT_OPTIMIZATION_LEVEL = "-Onone";
-            };
-            name = Debug;
-        };
-        A030000000000000000000CE /* Release */ = {
-            isa = XCBuildConfiguration;
-            buildSettings = {
-                ARCHS = arm64;
-                CODE_SIGN_ENTITLEMENTS = MCPBridge.entitlements;
-                CODE_SIGN_IDENTITY = "Apple Development";
-                CODE_SIGN_INJECT_BASE_ENTITLEMENTS = NO;
-                CODE_SIGN_STYLE = Manual;
-                CREATE_INFOPLIST_SECTION_IN_BINARY = YES;
-                DEVELOPMENT_TEAM = BWNJC57N56;
-                ENABLE_APP_SANDBOX = YES;
-                ENABLE_HARDENED_RUNTIME = YES;
-                INFOPLIST_FILE = MCPBridge-Info.plist;
-                MACOSX_DEPLOYMENT_TARGET = 27.0;
-                OTHER_LDFLAGS = "-lbsm";
-                PRODUCT_BUNDLE_IDENTIFIER = com.EarlyInnovations.Image2Movie.MCPBridge;
-                PRODUCT_NAME = "image2movie-mcp";
-                SKIP_INSTALL = YES;
-                SWIFT_VERSION = 6.0;
-                SWIFT_OPTIMIZATION_LEVEL = "-O";
-            };
-            name = Release;
-        };
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
+		A02900000000000000080006 /* Build configuration list for PBXNativeTarget "Image2MovieRegression" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				A02900000000000000080007 /* Debug */,
+				A02900000000000000080008 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		A030000000000000000000CC /* Build configuration list for PBXNativeTarget "image2movie-mcp" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				A030000000000000000000CD /* Debug */,
+				A030000000000000000000CE /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
 		C01FCF4A08A954540054247B /* Build configuration list for PBXNativeTarget "Image2Movie" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
@@ -703,14 +794,39 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-        A02900000000000000080006 = {
-            isa = XCConfigurationList;
-            buildConfigurations = (A02900000000000000080007, A02900000000000000080008,);
-            defaultConfigurationIsVisible = 0;
-            defaultConfigurationName = Debug;
-        };
-        A030000000000000000000CC = {isa = XCConfigurationList; buildConfigurations = (A030000000000000000000CD, A030000000000000000000CE,); defaultConfigurationIsVisible = 0; defaultConfigurationName = Release; };
 /* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		A02900000000000000050001 /* XCRemoteSwiftPackageReference "swift-sdk" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/modelcontextprotocol/swift-sdk";
+			requirement = {
+				kind = exactVersion;
+				version = 0.12.1;
+			};
+		};
+		A02900000000000000050002 /* XCRemoteSwiftPackageReference "swift-log" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/apple/swift-log.git";
+			requirement = {
+				kind = exactVersion;
+				version = 1.15.1;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		A02900000000000000030001 /* MCP */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = A02900000000000000050001 /* XCRemoteSwiftPackageReference "swift-sdk" */;
+			productName = MCP;
+		};
+		A02900000000000000030002 /* Logging */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = A02900000000000000050002 /* XCRemoteSwiftPackageReference "swift-log" */;
+			productName = Logging;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = 29B97313FDCFA39411CA2CEA /* Project object */;
 }

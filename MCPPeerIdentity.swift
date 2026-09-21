@@ -68,9 +68,13 @@ enum MCPPeerIdentity {
         }
     }
 
-    private static func requirement(for identifier: String) throws -> SecRequirement {
+    static func requirement(for identifier: String) throws -> SecRequirement {
+        // Apple re-signs Mac App Store code with its application-signing
+        // certificate. Its leaf OU is not the developer's Team ID (TN3127).
+        // Keep the Apple trust anchor and exact identifier on both branches.
         let text = "anchor apple generic and identifier \"\(identifier)\" " +
-            "and certificate leaf[subject.OU] = \"\(teamIdentifier)\""
+            "and (certificate leaf[subject.OU] = \"\(teamIdentifier)\" " +
+            "or certificate leaf[field.1.2.840.113635.100.6.1.9] exists)"
         var requirement: SecRequirement?
         guard SecRequirementCreateWithString(text as CFString, [], &requirement) == errSecSuccess,
               let requirement else { throw IdentityError.peerCode }

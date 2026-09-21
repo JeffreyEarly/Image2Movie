@@ -49,6 +49,7 @@
 		A03000000000000000000069 /* MCPBridgeMain.swift in Sources */ = {isa = PBXBuildFile; fileRef = A03000000000000000000005; };
 		A030000000000000000000D2 /* image2movie-mcp in Embed Bridge */ = {isa = PBXBuildFile; fileRef = A030000000000000000000C8; settings = {ATTRIBUTES = (CodeSignOnCopy,); }; };
 		A03000000000000000000301 /* MCPSettingsRegression.swift in Sources */ = {isa = PBXBuildFile; fileRef = A03000000000000000000300; };
+		A03100000000000000000002 /* MCPLaunchRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = A03100000000000000000001; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -117,6 +118,7 @@
 		A03000000000000000000005 /* MCPBridgeMain.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MCPBridgeMain.swift; sourceTree = "<group>"; };
 		A030000000000000000000C8 /* image2movie-mcp */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = "image2movie-mcp"; sourceTree = BUILT_PRODUCTS_DIR; };
 		A03000000000000000000300 /* MCPSettingsRegression.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Tests/MCPSettingsRegression.swift; sourceTree = "<group>"; };
+		A03100000000000000000001 /* MCPLaunchRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MCPLaunchRequest.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -189,6 +191,7 @@
 				A03000000000000000000003 /* MCPUnixSocketTransport.swift */,
 				A03000000000000000000004 /* MCPUnixSocketServer.swift */,
 				A03000000000000000000005 /* MCPBridgeMain.swift */,
+				A03100000000000000000001 /* MCPLaunchRequest.swift */,
             );
             name = Automation;
             sourceTree = "<group>";
@@ -427,6 +430,7 @@
 				A03000000000000000000066 /* MCPUnixSocket.swift in Sources */,
 				A03000000000000000000067 /* MCPUnixSocketTransport.swift in Sources */,
 				A03000000000000000000068 /* MCPUnixSocketServer.swift in Sources */,
+				A03100000000000000000002 /* MCPLaunchRequest.swift in Sources */,
 				8D11072D0486CEB800E47090 /* main.m in Sources */,
 				8151904B1187766300808105 /* AppController.m in Sources */,
 				814F4A43146306EB00CA0F3B /* PrimaryWindowController.m in Sources */,
@@ -455,6 +459,7 @@
 				A03000000000000000000066 /* MCPUnixSocket.swift in Sources */,
 				A03000000000000000000067 /* MCPUnixSocketTransport.swift in Sources */,
 				A03000000000000000000068 /* MCPUnixSocketServer.swift in Sources */,
+				A03100000000000000000002 /* MCPLaunchRequest.swift in Sources */,
 				8151904B1187766300808105 /* AppController.m in Sources */,
 				814F4A43146306EB00CA0F3B /* PrimaryWindowController.m in Sources */,
 				A02700000000000000000014 /* MovieFrameRenderer.m in Sources */,
@@ -470,7 +475,7 @@
             );
             runOnlyForDeploymentPostprocessing = 0;
         };
-		A030000000000000000000CA = {isa = PBXSourcesBuildPhase; buildActionMask = 2147483647; files = (A03000000000000000000065, A03000000000000000000066, A03000000000000000000069,); runOnlyForDeploymentPostprocessing = 0; };
+		A030000000000000000000CA = {isa = PBXSourcesBuildPhase; buildActionMask = 2147483647; files = (A03000000000000000000065, A03000000000000000000066, A03000000000000000000069, A03100000000000000000002,); runOnlyForDeploymentPostprocessing = 0; };
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXVariantGroup section */

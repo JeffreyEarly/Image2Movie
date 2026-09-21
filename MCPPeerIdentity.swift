@@ -56,6 +56,27 @@ enum MCPPeerIdentity {
         return socketURL
     }
 
+    /// Verify the exact bundle before asking Launch Services to start it.
+    static func validateAppForLaunch(at appURL: URL) throws {
+        var code: SecStaticCode?
+        guard SecStaticCodeCreateWithPath(appURL as CFURL, [], &code) == errSecSuccess,
+              let code else { throw IdentityError.appCode }
+        let requirement = try requirement(for: appIdentifier)
+        guard SecStaticCodeCheckValidity(code, SecCSFlags(rawValue: kSecCSCheckAllArchitectures),
+                                         requirement) == errSecSuccess else {
+            throw IdentityError.appSignature
+        }
+    }
+
+    private static func requirement(for identifier: String) throws -> SecRequirement {
+        let text = "anchor apple generic and identifier \"\(identifier)\" " +
+            "and certificate leaf[subject.OU] = \"\(teamIdentifier)\""
+        var requirement: SecRequirement?
+        guard SecRequirementCreateWithString(text as CFString, [], &requirement) == errSecSuccess,
+              let requirement else { throw IdentityError.peerCode }
+        return requirement
+    }
+
     /// The kernel supplies this token for the connected Unix-domain peer.
     /// Neither PID strings nor handshake claims are used as authority.
     static func validatePeer(on descriptor: Int32, identifier: String,
@@ -75,12 +96,8 @@ enum MCPPeerIdentity {
               [], &peerCode) == errSecSuccess, let peerCode else {
             throw IdentityError.peerCode
         }
-        let requirementText = "anchor apple generic and identifier \"\(identifier)\" " +
-            "and certificate leaf[subject.OU] = \"\(teamIdentifier)\""
-        var requirement: SecRequirement?
-        guard SecRequirementCreateWithString(requirementText as CFString, [],
-                                             &requirement) == errSecSuccess,
-              let requirement,
+        let requirement = try requirement(for: identifier)
+        guard
               SecCodeCheckValidity(peerCode, [], requirement) == errSecSuccess else {
             throw IdentityError.peerSignature
         }
@@ -97,7 +114,7 @@ enum MCPPeerIdentity {
 
     enum IdentityError: LocalizedError {
         case appGroupUnavailable, socketPathTooLong, peerCredentials, peerCode
-        case peerSignature, peerInstallation, invalidPath(String)
+        case peerSignature, peerInstallation, appCode, appSignature, invalidPath(String)
 
         var errorDescription: String? {
             switch self {
@@ -107,6 +124,8 @@ enum MCPPeerIdentity {
             case .peerCode: "The connected peer's signed code could not be read"
             case .peerSignature: "The connected peer has an invalid code signature"
             case .peerInstallation: "The connected peer belongs to another app installation"
+            case .appCode: "Could not read the Image2Movie app’s code signature"
+            case .appSignature: "The Image2Movie app does not have a valid Early Innovations signature"
             case .invalidPath(let path): "Could not resolve path: \(path)"
             }
         }

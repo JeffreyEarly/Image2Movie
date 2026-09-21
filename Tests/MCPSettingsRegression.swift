@@ -1,4 +1,4 @@
-import Foundation
+import AppKit
 
 private enum MCPSettingsRegressionError: LocalizedError {
     case failed(String)
@@ -16,6 +16,20 @@ func runMCPSettingsRegression() throws {
     func check(_ condition: @autoclosure () -> Bool, _ message: String) throws {
         guard condition() else { throw MCPSettingsRegressionError.failed(message) }
     }
+
+    try check(!MCPLaunchRequest.isAutomationLaunch(arguments: [], event: nil),
+              "ordinary launch was hidden")
+    let launchEvent = MCPLaunchRequest.makeAppleEvent()
+    try check(MCPLaunchRequest.isAutomationLaunch(arguments: [], event: launchEvent),
+              "sandbox launch event was not recognized")
+    try check(launchEvent.paramDescriptor(forKeyword: keyAERestoreAppState)?.enumCodeValue == kAENo,
+              "automation launch did not suppress window restoration")
+    let reopenEvent = NSAppleEventDescriptor(eventClass: kCoreEventClass,
+        eventID: kAEReopenApplication, targetDescriptor: nil, returnID: -1, transactionID: 0)
+    try check(!MCPLaunchRequest.isAutomationLaunch(arguments: [], event: reopenEvent),
+              "normal Dock reopening was suppressed")
+    try check(MCPLaunchRequest.isAutomationLaunch(arguments: [MCPLaunchRequest.argument], event: nil),
+              "direct development launch argument was not recognized")
 
     let source = "/tmp/quo\"te\\line\nsnow☃" + String(UnicodeScalar(1)!)
     let escaped = MCPServerController.tomlEscape(source)

@@ -1,63 +1,36 @@
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%
-% 	Setup the parameters for the example
-%
-x=0:.01:10;
-time=0:1:50;
-c = -x(end)/time(end);
-x0 = x(end);
+%% Generate lossless PNG frames for Image2Movie (MATLAB R2025a or newer).
+% Import the frames in filename order, then export at 1920 x 1080 and 30 fps.
+% The 120 frames make a four-second movie in Image2Movie 3.1 or 4.0.
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%
-% 	Select the folder where we shoudl put the animation frames
-%	and create it, if necessary
-%
-
-FramesFolder = './Animation_Example_Frames';
-
-if (length(time) > 1)
-if exist(FramesFolder) == 0
-	mkdir(FramesFolder);
+%% Choose the output size, timing, and an empty folder.
+frameWidth = 1920;
+frameHeight = 1080;
+frameRate = 30;
+duration = 4;
+frameCount = frameRate * duration;
+outputFolder = fullfile(pwd, "Animation_Example_Frames");
+if ~isempty(dir(fullfile(outputFolder, "*.png")))
+    error("Choose an empty outputFolder to avoid mixing old and new frames.");
 end
+mkdir(outputFolder);
+
+%% Create the plot once, with fixed axes and a white background.
+x = linspace(0, 10, 1000);
+fig = figure(Units="pixels", Position=[100 100 960 540], Theme="light");
+ax = axes(fig, FontSize=14);
+signal = plot(ax, x, zeros(size(x)), LineWidth=3, Color=[0.1 0.4 0.7]);
+xlim(ax, [0 10]);
+ylim(ax, [0 1.2]);
+xlabel(ax, "Distance");
+ylabel(ax, "Amplitude");
+title(ax, "A traveling pulse");
+
+%% Update the data and export each frame at exact pixel dimensions.
+for frameIndex = 1:frameCount
+    time = (frameIndex - 1) / frameRate;
+    center = 2 + 6 * time / duration;
+    signal.YData = exp(-((x - center) / 0.6).^2);
+    filename = fullfile(outputFolder, sprintf("frame_%04d.png", frameIndex));
+    exportgraphics(fig, filename, Units="pixels", Width=frameWidth, Height=frameHeight, Padding="figure", BackgroundColor="white");
 end
-
-
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%
-% 	Setup the figure
-%
-
-% Set the scale factor to 1, to get exactly the resolution of the figure.
-% In this case that would be 1280x720. If you want something high quality,
-% set the scale factor higher, then shrink it down later
-ScaleFactor = 2;
-
-figure('Position',[200 200 1280 720]);
-set(gcf,'PaperPositionMode','auto')
-set(gcf, 'Color', 'w');
-
-for t=time
-	
-	% Extract the data
-	f = exp( -(x-c*t-x0).*(x-c*t-x0) );
-
-	% Plot it
-	plot( x, f, '-r', 'LineWidth', 5);
-	axis([x(1) x(end) 0 1.5]);
-	set(gca, 'TickDir', 'out');
-	set(gca, 'Linewidth', 2.0);
-	set(gca, 'FontSize', 24.0);
-	xlabel('Distance', 'FontName', 'Helvetica', 'FontSize', 24);
-	ylabel('Amplitude', 'FontName', 'Helvetica', 'FontSize', 24);
-	title('Propagating Signal', 'FontName', 'Helvetica', 'FontSize', 36);
-	text( 1, 1.4, 1, sprintf('t = %.0f days',t), 'LineWidth', 2, 'FontName', 'Helvetica', 'FontSize', 36, 'BackgroundColor', 'white')
-	
-	% Now save it the folder
-	if (length(time) > 1)
-		%print(sprintf('-r%d',72*ScaleFactor), '-dpng', sprintf('%s/t_%03d', FramesFolder,t) );
-		print('-depsc2', sprintf('%s/t_%03d', FramesFolder,t) );
-	end
-end
-
-
+fprintf("Wrote %d frames to %s\n", frameCount, outputFolder);

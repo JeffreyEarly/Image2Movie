@@ -73,3 +73,50 @@ TestFlight/App Store build. The Numbers check establishes certificate-policy
 compatibility, not that final integration result. Remaining sandbox, external
 volume, and Shortcuts checks are recorded in
 [AutomationValidation.md](../Tests/AutomationValidation.md).
+
+## Website downloads (October 19, 2026)
+
+The local website candidates are **4.0 (1)** and **3.1 (1)**. The latter is built from the separate `release/3.x` checkout with version metadata updated to 3.1; its rendering/export code is unchanged. The owner confirmed permission to retain the current icon for these releases. Its original attribution notice is retained.
+
+Website distribution uses Developer ID, separately from the App Store export above. `DeveloperIDExportOptions.plist` exports a local signed application. `NotarizationOptions.plist` **uploads the build to Apple for notarization**; it does not publish to the website or submit to App Review. The owner authorized notarization for both candidates.
+
+For 4.0, archive with the existing project signing settings:
+
+```sh
+xcodebuild -project Image2Movie.xcodeproj -scheme Image2Movie \
+  -configuration Release -destination 'generic/platform=macOS' \
+  -derivedDataPath build/Automation \
+  -archivePath build/WebsiteRelease/Image2Movie-4.0.xcarchive \
+  -disableAutomaticPackageResolution -onlyUsePackageVersionsFromResolvedFile \
+  -allowProvisioningUpdates archive
+
+xcodebuild -exportArchive \
+  -archivePath build/WebsiteRelease/Image2Movie-4.0.xcarchive \
+  -exportOptionsPlist Distribution/NotarizationOptions.plist \
+  -exportPath build/WebsiteRelease/Notarization -allowProvisioningUpdates
+
+# Run after Apple has completed processing the upload.
+xcodebuild -exportNotarizedApp \
+  -archivePath build/WebsiteRelease/Image2Movie-4.0.xcarchive \
+  -exportPath build/WebsiteRelease/Notarized
+
+xcrun stapler validate build/WebsiteRelease/Notarized/Image2Movie.app
+codesign --verify --deep --strict build/WebsiteRelease/Notarized/Image2Movie.app
+spctl --assess --type execute --verbose=2 build/WebsiteRelease/Notarized/Image2Movie.app
+mkdir -p build/WebsiteRelease/downloads
+ditto -c -k --sequesterRsrc --keepParent \
+  build/WebsiteRelease/Notarized/Image2Movie.app \
+  build/WebsiteRelease/downloads/Image2Movie-4.0.zip
+```
+
+If `-exportNotarizedApp` reports processing, wait for Apple and retry that export, rather than submitting another build. Never package an unsigned or unstapled fallback as the finished download. For 3.1, use the distribution instructions in its own checkout.
+
+### Candidate verification
+
+Both applications and the 4.0 helper are signed by `Developer ID Application: Early Innovations, LLC (BWNJC57N56)`, with hardened runtime. Both tickets validate, and Gatekeeper reports `accepted` / `Notarized Developer ID`. The 3.1 app contains `x86_64` and `arm64` code with minimum macOS 12; 4.0 is `arm64` with minimum macOS 27.
+
+Both standalone regression suites passed with Xcode 27.1. The actual notarized 4.0 app passed six-tool discovery, concurrent sessions, malformed/oversized rejection, connection limits, a real export, bridge disconnect/reconnect, cancellation, and destination preservation using existing folder grants. Both ZIPs were uploaded only to the isolated DDEV Media Library, downloaded through the local preview, compared byte-for-byte, extracted, and validated again. Both downloaded apps launched through Gatekeeper; the 3.1 About window reports 3.1 (1).
+
+Local artifacts and evidence are under ignored `build/WebsiteRelease/`: `downloads/`, `release-manifest.json`, archives, notarization/export logs, and regression/client logs. `downloads/SHA256SUMS.txt` identifies the exact review ZIPs. No website publication, GitHub release, App Store submission, or TestFlight upload was performed.
+
+The local website preview is `https://jeffreyearly-wp.ddev.site/programming/image2movie/`. Publication requires review of that page and the exact ZIPs. Older macOS/Intel runtime testing and the previously listed fresh/revoked authorization, external-volume, and extended Shortcuts acceptance checks remain outstanding. These candidates do not establish those untested cases.

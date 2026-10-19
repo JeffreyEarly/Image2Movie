@@ -125,6 +125,8 @@ progress in the app. A second simultaneous export receives a busy error.
 
 ## MATLAB frame sequences
 
+Start with [Matlab_Animation_Example.m](Matlab_Animation_Example.m) (MATLAB R2025a or newer). It exports 120 lossless PNG frames at exactly 1920 × 1080 pixels. Import them in filename order and choose 30 fps for a four-second movie. Use an empty output folder; the example stops if it already contains PNGs. Set both the script and Image2Movie to 3840 × 2160 for UHD output.
+
 For dense, lit 3D MATLAB scenes, render lossless PNG frames at the intended output
 resolution, then encode the sequence here. For UHD delivery, use **HEVC, High,
 3840 × 2160, and 30 fps**. Keep the PNGs as the rendered master; they let you

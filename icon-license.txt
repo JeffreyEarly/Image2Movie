@@ -2,3 +2,13 @@ Icon Author: Robsonbillponte
 
 HomePage: http://robsonbillponte666.deviantart.com
 License: Free for non-commercial use.
+
+Scope
+
+This notice applies to File-Movies-icon.png, the images in
+Image2MovieIcon.iconset/, and application icons derived from those assets.
+They are excluded from the repository's CC BY 3.0 source-code license.
+
+Early Innovations has separate permission to use the icon in Image2Movie.
+No additional rights to the icon are granted here. Obtain any further
+permission you need from the icon's author.

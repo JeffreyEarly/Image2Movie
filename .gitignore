@@ -27,6 +27,30 @@ xcuserdata/
 *.perspectivev3
 !default.perspectivev3
 
+# Signing keys, certificates, provisioning profiles, and local keychains
+*.p8
+*.p12
+*.pfx
+*.pem
+*.key
+*.cer
+*.crt
+*.mobileprovision
+*.provisionprofile
+*.keychain
+*.keychain-db
+
+# Local credentials and environment overrides (keep safe examples trackable)
+.env
+.env.*
+!.env.example
+!.env.template
+.netrc
+/.aws/
+/.ssh/
+/credentials/
+/secrets/
+
 # Historical release/source archives
 /Image2Movie*.zip
 

@@ -151,6 +151,6 @@ only and are not bundled into the application.
 
 ## Licensing
 
-The original source copyright notices are preserved. No new source-code license
-has been assigned by this import. The icon has a separate notice in
-`icon-license.txt` specifying free non-commercial use.
+The Image2Movie source code and documentation are licensed under [Creative Commons Attribution 3.0 Unported (CC BY 3.0)](LICENSE), consistent with the original website. Preserve the existing copyright and author notices and credit Jeffrey Early / Early Innovations, LLC.
+
+The icon assets are excluded from that license. Their original attribution and separate terms are in [icon-license.txt](icon-license.txt). Early Innovations has permission to use the icon in Image2Movie; this does not grant additional rights to downstream users. Third-party dependencies retain their own licenses.

@@ -9,6 +9,8 @@
 #import "ImagesToMovieController.h"
 #import "ImagesToMovie.h"
 #import "MovieFrameRenderer.h"
+#import "ImageTableController.h"
+#import "Image2Movie-Swift.h"
 #import <math.h>
 
 static char ImagePathObservationContext;
@@ -82,8 +84,15 @@ static NSInteger ValidIntegerPreference(NSString *key, NSInteger minimum, NSInte
     [self updateOriginalSizeFields];
     [self frameRateOrSizeDidChange];
     if (!path) return;
+    FileAccessLease *lease = [self.imageTableController leaseForImagePath:path];
+    if (!lease) {
+        lease = [[FileAccessManager shared] leaseForReadingURLs:@[[NSURL fileURLWithPath:path]] error:NULL];
+    }
     dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
+        // Keep the original user-selected URL's scope through the background read.
+        __attribute__((objc_precise_lifetime)) FileAccessLease *activeLease = lease;
         NSSize size = [MovieFrameRenderer imageSizeAtPath:path error:NULL];
+        (void)activeLease;
         dispatch_async(dispatch_get_main_queue(), ^{
             if (generation != self.firstFrameLoadGeneration) return;
             self.firstFrameSize = size;

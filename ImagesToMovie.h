@@ -9,6 +9,8 @@
 #import <Foundation/Foundation.h>
 #import <AVFoundation/AVFoundation.h>
 
+NS_ASSUME_NONNULL_BEGIN
+
 typedef NS_ENUM(NSInteger, MovieQualityMode) {
     MovieQualityStandard = 0,
     MovieQualityHigh = 1,
@@ -25,12 +27,14 @@ typedef NS_ENUM(NSInteger, MovieQualityMode) {
 #pragma mark Initialization
 #pragma mark
 
-@property(readwrite, strong, nonatomic) NSMutableArray *imagePaths;
+@property(readwrite, strong, nonatomic) NSMutableArray<NSString *> *imagePaths;
 @property(readwrite, assign, nonatomic) NSUInteger frameRate;
 @property NSSize frameSize;
 @property NSUInteger averageBitRate;
 @property MovieQualityMode qualityMode;
 @property(copy) AVVideoCodecType codec; // HEVC by default
+// Interactive Save confirms replacement; automation opts in explicitly.
+@property BOOL allowOverwrite;
 
 /************************************************/
 /*		Quicktime Movie Output					*/
@@ -40,10 +44,10 @@ typedef NS_ENUM(NSInteger, MovieQualityMode) {
 #pragma mark Quicktime Movie Output
 #pragma mark
 
-@property(readwrite, strong, atomic) AVAssetWriter *movieWriter;
+@property(readwrite, strong, atomic, nullable) AVAssetWriter *movieWriter;
 
 // Completion runs once on the main thread. A nil error means success.
-- (void) createMovieAtPath: (NSString *) destinationPath completionHandler: (void (^)(NSError *error)) completionHandler;
+- (void) createMovieAtPath: (NSString *) destinationPath completionHandler: (void (^ _Nullable)(NSError * _Nullable error)) completionHandler;
 
 // With tolerance allows some fudge factor.
 - (NSSize) resizeOriginal: (NSSize) originalSize intoTargetSize: (NSSize) targetSize withTolerance: (BOOL) tolerateSlop;
@@ -65,3 +69,5 @@ typedef NS_ENUM(NSInteger, MovieQualityMode) {
 @property(copy) NSString *progressString;
 
 @end
+
+NS_ASSUME_NONNULL_END

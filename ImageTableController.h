@@ -10,6 +10,9 @@
 #import <UniformTypeIdentifiers/UniformTypeIdentifiers.h>
 
 @class ImagesToMovie;
+@class FileAccessLease;
+
+NS_ASSUME_NONNULL_BEGIN
 
 @interface ImageTableView : NSTableView <NSUserInterfaceValidations>
 - (IBAction)delete:(id)sender;
@@ -17,14 +20,18 @@
 
 @interface ImageTableController : NSObject <NSTableViewDataSource>
 
-@property(unsafe_unretained) IBOutlet NSTableView *imageTable;
-@property(unsafe_unretained) IBOutlet NSArrayController *imagePathArrayController;
-@property(nonatomic, weak) ImagesToMovie *imagesToMovie;
-@property(nonatomic, strong) NSUndoManager *undoManager;
+@property(nullable, unsafe_unretained) IBOutlet NSTableView *imageTable;
+@property(nullable, unsafe_unretained) IBOutlet NSArrayController *imagePathArrayController;
+@property(nullable, nonatomic, weak) ImagesToMovie *imagesToMovie;
+@property(nullable, nonatomic, strong) NSUndoManager *undoManager;
 
 + (NSArray<UTType *> *)supportedImageContentTypes;
 - (BOOL)importImageURLs:(NSArray<NSURL *> *)URLs;
+- (nullable FileAccessLease *)leaseForImagePath:(NSString *)path;
+- (NSArray<FileAccessLease *> *)currentImageLeases;
 
 - (IBAction)removeSelectedImages:(id)sender;
 
 @end
+
+NS_ASSUME_NONNULL_END

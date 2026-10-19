@@ -7,14 +7,16 @@
 //
 
 #import <AppKit/AppKit.h>
+NS_ASSUME_NONNULL_BEGIN
 @class ImagesToMovie;
+@class ImageTableController;
 @interface ImagesToMovieController : NSObject
-@property(readwrite, copy, nonatomic) NSString *firstFramePath;
+@property(nullable, readwrite, copy, nonatomic) NSString *firstFramePath;
 @property(readwrite, nonatomic) NSSize firstFrameSize;
 @property(readwrite, nonatomic) NSInteger selectedSizePresetsTag;
 @property(readwrite, nonatomic) NSInteger selectedCodecTag;
 @property(readwrite, nonatomic) NSInteger selectedQualityTag;
-@property(readonly, nonatomic) NSString *codec;
+@property(nullable, readonly, nonatomic) NSString *codec;
 @property(readonly, nonatomic) BOOL qualityControlsVisible;
 @property(readonly, nonatomic) BOOL customBitRateEnabled;
 @property(readonly, nonatomic) BOOL automaticBitRateVisible;
@@ -26,5 +28,7 @@
 // Display value in Mb/s; the model receives bits per second.
 @property(readwrite, assign, nonatomic) CGFloat bitRate;
 - (void)updateModelWithNewSettings;
-@property(readwrite, strong, nonatomic) ImagesToMovie *imagesToMovie;
+@property(nullable, readwrite, strong, nonatomic) ImagesToMovie *imagesToMovie;
+@property(nullable, readwrite, weak, nonatomic) ImageTableController *imageTableController;
 @end
+NS_ASSUME_NONNULL_END

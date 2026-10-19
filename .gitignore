@@ -5,6 +5,7 @@
 .LSOverride
 
 # Xcode build products and caches
+__pycache__/
 /build/
 /DerivedData/
 *.app/

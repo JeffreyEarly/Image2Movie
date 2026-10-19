@@ -7,6 +7,7 @@
 //
 
 #import "PrimaryWindowController.h"
+#import "Image2Movie-Swift.h"
 #import <UniformTypeIdentifiers/UniformTypeIdentifiers.h>
 
 @interface MovieUndoManager : NSUndoManager
@@ -77,13 +78,16 @@ static NSURL *PanelDirectoryURL(NSString *defaultsKey)
     self.movieUndoManager = [[MovieUndoManager alloc] init];
     self.movieUndoManager.levelsOfUndo = 20;
     self.movieUndoManager.imagesToMovie = self.imagesToMovie;
-    self.imagesToMovieController.imagesToMovie = self.imagesToMovie;
     self.imageTableController.imagesToMovie = self.imagesToMovie;
+    self.imagesToMovieController.imageTableController = self.imageTableController;
+    self.imagesToMovieController.imagesToMovie = self.imagesToMovie;
     self.imageTableController.undoManager = self.movieUndoManager;
+    [[ExportCoordinator shared] attachDraftModel:self.imagesToMovie window:self.window];
 }
 
 - (void)dealloc
 {
+    [[ExportCoordinator shared] attachDraftModel:nil window:nil];
     [self.imagesToMovie removeObserver:self forKeyPath:@"movieCreationInProgress"];
 }
 
@@ -138,7 +142,7 @@ static NSURL *PanelDirectoryURL(NSString *defaultsKey)
 - (IBAction)buttonClicked:(id)sender
 {
 	if (self.imagesToMovie.movieCreationInProgress) {
-		[self.imagesToMovie cancel];
+		[[ExportCoordinator shared] cancelActiveExport];
 	} else {
         [self exportMovie:sender];
     }
@@ -163,7 +167,7 @@ static NSURL *PanelDirectoryURL(NSString *defaultsKey)
         [[NSUserDefaults standardUserDefaults] setObject:savePanel.URL.path.stringByDeletingLastPathComponent
                                                   forKey:@"defaultMoviePath"];
         [strongSelf.imagesToMovieController updateModelWithNewSettings];
-        [strongSelf.imagesToMovie createMovieAtPath:savePanel.URL.path completionHandler:^(NSError *error) {
+        [[ExportCoordinator shared] exportDraftTo:savePanel.URL retainingLeases:strongSelf.imageTableController.currentImageLeases completion:^(NSError *error) {
             if (error && !([error.domain isEqualToString:NSCocoaErrorDomain] && error.code == NSUserCancelledError)) {
                 [strongSelf.window presentError:error];
             }

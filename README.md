@@ -1,8 +1,9 @@
 # Image2Movie
 
-A macOS application for turning a sequence of images into a movie, written in
-Objective-C with AppKit, Core Image, and AVFoundation. Requires **macOS 27 or later
-on Apple silicon**; build with Xcode 27 or later. No third-party dependencies.
+A sandboxed macOS application for turning a sequence of images into a movie,
+using AppKit, a Swift 6 automation layer, and the existing Objective-C/Core Image/
+AVFoundation export engine. Requires **macOS 27 or later on Apple silicon**;
+build with Xcode 27 or later. The optional bundled MCP bridge uses the official Swift SDK with pinned packages; no additional runtime or companion installation is required.
 
 Fresh preferences select **HEVC 10-bit** and **High** quality. Existing remembered
 codec choices are preserved. Choose H.264 or HEVC for MP4 output, or Apple ProRes
@@ -39,7 +40,7 @@ checkout.
 ## Project contents
 
 - `Image2Movie.xcodeproj`: Xcode project and shared `Image2Movie` scheme.
-- `*.h`, `*.m`, and `Image2Movie_Prefix.pch`: application source.
+- `*.h`, `*.m`, `*.swift`, and `Image2Movie_Prefix.pch`: application source.
 - `PrimaryWindow.xib` and `English.lproj/MainMenu.xib`: editable interface
   and localization resources.
 - `Image2MovieIcon.iconset`, `File-Movies-icon.png`, and `icon-license.txt`: icon
@@ -60,7 +61,7 @@ and choose Run. The project can also be built from a terminal:
 
 ```sh
 xcodebuild -project Image2Movie.xcodeproj -scheme Image2Movie \
-  -configuration Debug -derivedDataPath build CODE_SIGNING_ALLOWED=NO build
+  -configuration Debug -derivedDataPath build build
 ```
 
 The resulting app is at `build/Build/Products/Debug/Image2Movie.app`. To use it,
@@ -68,6 +69,13 @@ drag image files from Finder into the image list or choose **File → Add Images
 (⌘O). Choose a codec, frame rate and size, then click **Save Movie** or choose
 **File → Export Movie…** (⌘S). The Save dialog uses the codec's MP4 or MOV extension.
 During export, the button becomes **Cancel**; the Export menu command is disabled.
+
+The project uses automatic signing with Early Innovations' team (`BWNJC57N56`).
+Normal builds use Apple Development signing; App Store exports use distribution
+signing. See [Distribution/README.md](Distribution/README.md) for version settings,
+archive/export commands, and validation results. Xcode resolves the pinned
+packages on the first build. An unsigned compile can use `CODE_SIGNING_ALLOWED=NO`,
+but sandbox, bookmark, Keychain, and App Intents checks require the signed app.
 
 Imports append supported, readable image files in the supplied order, including
 duplicates. Folders, unsupported files, and missing or unreadable files are
@@ -90,7 +98,34 @@ across size and frame-rate changes; changing codec exits Custom and restores the
 remembered Standard/High choice. The custom rate, image list, and undo history are
 not saved between launches.
 
+## Shortcuts and MCP automation
+
+Open **Image2Movie → Automation Settings…** (⌘,) to authorize input and output
+folders. Input grants are read-only; output grants allow writing. Bookmarks
+remember those grants between launches, and the settings window provides
+reauthorization and removal. Normal Add Images and Save dialogs continue to
+authorize the files you select.
+
+The native **Export Movie**, **Get Export Status**, and **Cancel Export** actions
+are available through App Intents. Enable **Allow AI tools to use Image2Movie**
+to connect Codex through the signed `image2movie-mcp` executable bundled with the
+app. Access is disabled by default. After initial setup, the bridge starts its
+containing app in the background when Codex connects, without showing a movie
+window or taking focus. Image2Movie stays in the Dock until you quit it, including
+after clients disconnect. Click its Dock icon to see progress or cancel an export.
+A fresh connection can launch it again after Quit. The bridge uses
+stdio and a private App Group socket, with no TCP listener or bearer token. See [Automation.md](Automation.md) for Shortcuts examples,
+Codex setup, request formats, and troubleshooting.
+
+All entry points share one export coordinator. Automation preserves the
+interactive image list, settings, and Undo history. It requires explicit output
+dimensions and defaults to HEVC, High quality, 30 fps, and no overwrite. Jobs
+preserve supplied image order and duplicates, reject invalid inputs, and report
+progress in the app. A second simultaneous export receives a busy error.
+
 ## MATLAB frame sequences
+
+Start with [Matlab_Animation_Example.m](Matlab_Animation_Example.m) (MATLAB R2025a or newer). It exports 120 lossless PNG frames at exactly 1920 × 1080 pixels. Import them in filename order and choose 30 fps for a four-second movie. Use an empty output folder; the example stops if it already contains PNGs. Set both the script and Image2Movie to 3840 × 2160 for UHD output.
 
 For dense, lit 3D MATLAB scenes, render lossless PNG frames at the intended output
 resolution, then encode the sequence here. For UHD delivery, use **HEVC, High,
@@ -123,12 +158,21 @@ Run the standalone regression checks from a terminal with Xcode selected:
 bash Tests/run-regressions.sh
 ```
 
-The script builds the Debug app, compiles a standalone harness against its sources,
-and generates temporary fixtures. Checks cover export safety, cancellation and
+The script builds the Debug app and the standalone `Image2MovieRegression`
+target, then generates temporary fixtures. Checks cover export safety, cancellation and
 retry, main-thread notifications, ordinary/UHD/vector movies, input orientation,
 high-precision gradients, Rec.709 metadata, encoded profiles, and decoded precision.
 It also loads the built menu/window to exercise imports, Undo/Redo, export guards,
 panel types, and isolated preference restoration in a fresh process.
+
+The same harness runs native Swift checks for coordination and file access, plus
+Unix socket transport checks using the official client SDK. Protocol checks cover
+concurrent sessions, strict argument validation, bounded messages, and shutdown.
+Peer code-signature authentication is checked separately in signed processes. Signed-app
+folder permissions and real Shortcuts/Codex pairing also require application-level
+checks; unsigned test success alone does not establish those behaviors.
+See [the automation validation record](Tests/AutomationValidation.md) for signed-app
+results and the remaining milestone checks.
 
 Quality comparisons use moving text, thin colored lines, gradients, and texture.
 The harness writes `quality-comparison.csv` with file sizes, export times, and
@@ -137,6 +181,7 @@ of one test sequence, not universal quality or file-size guarantees.
 
 Temporary files are removed on exit; set `KEEP_TEST_OUTPUT=1` to retain them.
 Set `APP_BUNDLE_PATH` to an already-built app to reuse it for the nib checks.
+Set `REGRESSION_BUILD_DIR` to reuse an existing Xcode build/package cache.
 The encoder and renderer checks require access to macOS video/GPU services and
 may fail in a restricted shell sandbox.
 
@@ -150,6 +195,9 @@ their history remains in Git. Historical implementation notes are documentation
 only and are not bundled into the application.
 
 ## Licensing
+
+Pinned dependency licenses and notices are in [ThirdPartyNotices.txt](ThirdPartyNotices.txt),
+which is also included in the application bundle.
 
 The Image2Movie source code and documentation are licensed under [Creative Commons Attribution 3.0 Unported (CC BY 3.0)](LICENSE), consistent with the original website. Preserve the existing copyright and author notices and credit Jeffrey Early / Early Innovations, LLC.
 
